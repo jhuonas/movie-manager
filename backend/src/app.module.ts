@@ -3,6 +3,13 @@ import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { MoviesModule } from './movies/movies.module';
+import { ActorsModule } from './actors/actors.module';
+import { RatingsModule } from './ratings/ratings.module';
+import { SeedsModule } from './seeds/seeds.module';
+import { Movie } from './entities/movie.entity';
+import { Actor } from './entities/actor.entity';
+import { Rating } from './entities/rating.entity';
 
 @Module({
   imports: [
@@ -14,9 +21,14 @@ import { AppService } from './app.service';
       username: process.env.POSTGRES_USER || 'postgres',
       password: process.env.POSTGRES_PASSWORD || 'postgres',
       database: process.env.POSTGRES_DB || 'moviesdb',
+      entities: [Movie, Actor, Rating],
       autoLoadEntities: true,
       synchronize: true,
     }),
+    MoviesModule,
+    ActorsModule,
+    RatingsModule,
+    SeedsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -3,13 +3,44 @@ services:
   postgres:
     image: postgres:15
     restart: always
+    container_name: movie-manager-postgres
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: moviesdb
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
     ports:
       - '5432:5432'
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d moviesdb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - movie-manager-network
+
+  backend:
+    build: ./backend
+    container_name: movie-manager-backend
+    restart: always
+    ports:
+      - '3001:3001'
+    environment:
+      - NODE_ENV=development
+    env_file:
+      - ./backend/.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - movie-manager-network
+
+networks:
+  movie-manager-network:
+    driver: bridge
+
 volumes:
   pgdata: 

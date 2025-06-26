@@ -1,98 +1,277 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Movie Manager Backend
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+NestJS backend API for managing movies, actors, and ratings with TypeScript, TypeORM, and PostgreSQL.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## 🏗️ Architecture
 
-## Description
+- **Framework**: NestJS with TypeScript
+- **ORM**: TypeORM with PostgreSQL
+- **Validation**: class-validator
+- **Documentation**: Swagger/OpenAPI
+- **Authentication**: Custom token-based guard
+- **Database**: PostgreSQL (Docker)
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## 📁 Project Structure
 
-## Project setup
+### Modules Created
+
+1. **Movies Module** (`/src/movies/`)
+   - Entity: `Movie`
+   - Controller: `MoviesController`
+   - Service: `MoviesService`
+   - DTOs: `CreateMovieDto`, `UpdateMovieDto`, `SearchMovieDto`
+
+2. **Actors Module** (`/src/actors/`)
+   - Entity: `Actor`
+   - Controller: `ActorsController`
+   - Service: `ActorsService`
+   - DTOs: `CreateActorDto`, `UpdateActorDto`, `SearchActorDto`
+
+3. **Ratings Module** (`/src/ratings/`)
+   - Entity: `Rating`
+   - Controller: `RatingsController`
+   - Service: `RatingsService`
+   - DTOs: `CreateRatingDto`, `UpdateRatingDto`
+
+4. **Seeds Module** (`/src/seeds/`)
+   - Service: `SeedService`
+   - Controller: `SeedsController`
+
+### Entities
+
+#### Movie
+- `id`: Unique movie ID
+- `title`: Movie title
+- `description`: Movie description
+- `releaseYear`: Release year
+- `genre`: Movie genre
+- `averageRating`: Average rating (auto-calculated)
+- `actors`: Many-to-many relationship with Actor
+- `ratings`: One-to-many relationship with Rating
+- `createdAt`: Creation timestamp
+- `updatedAt`: Update timestamp
+
+#### Actor
+- `id`: Unique actor ID
+- `name`: Actor name
+- `biography`: Actor biography
+- `birthDate`: Birth date
+- `nationality`: Nationality
+- `movies`: Many-to-many relationship with Movie
+- `createdAt`: Creation timestamp
+- `updatedAt`: Update timestamp
+
+#### Rating
+- `id`: Unique rating ID
+- `score`: Rating score (0.5 to 5.0)
+- `comment`: Rating comment
+- `reviewerName`: Reviewer name
+- `movie`: Many-to-one relationship with Movie
+- `createdAt`: Creation timestamp
+- `updatedAt`: Update timestamp
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+- Node.js 18+
+- PostgreSQL (Docker or local)
+- npm or yarn
+
+### Installation
 
 ```bash
-$ npm install
+# Install dependencies
+npm install
+
+# Configure environment variables
+# Add API_SECRET to your .env file
+
+# Start development server
+npm run start:dev
 ```
 
-## Compile and run the project
+### Database Setup
 
 ```bash
-# development
-$ npm run start
+# Start PostgreSQL (if using Docker)
+npm run db:start
 
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+# Wait for database to be ready, then start the application
+npm run start:dev
 ```
 
-## Run tests
+### Seed Database
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+# After application is running
+npm run seed
 ```
 
-## Deployment
+## 📚 API Endpoints
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+### Movies
+- `GET /movies` - List all movies
+- `GET /movies/search` - Search movies by title or genre
+- `GET /movies/:id` - Get movie by ID
+- `GET /movies/:id/actors` - Get actors in a movie
+- `POST /movies` - Create new movie (authenticated)
+- `PATCH /movies/:id` - Update movie (authenticated)
+- `DELETE /movies/:id` - Delete movie (authenticated)
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+### Actors
+- `GET /actors` - List all actors
+- `GET /actors/search` - Search actors by name or nationality
+- `GET /actors/:id` - Get actor by ID
+- `GET /actors/:id/movies` - Get movies by actor
+- `POST /actors` - Create new actor (authenticated)
+- `PATCH /actors/:id` - Update actor (authenticated)
+- `DELETE /actors/:id` - Delete actor (authenticated)
+
+### Ratings
+- `GET /ratings` - List all ratings
+- `GET /ratings/:id` - Get rating by ID
+- `GET /ratings/movie/:movieId` - Get ratings for a movie
+- `POST /ratings` - Create new rating (authenticated)
+- `PATCH /ratings/:id` - Update rating (authenticated)
+- `DELETE /ratings/:id` - Delete rating (authenticated)
+
+### Seeds
+- `POST /seeds` - Seed database with sample data (authenticated)
+
+## 🔐 Authentication
+
+The API uses a simple token-based authentication for modification operations. The token must be sent in the `Authorization` header as `Bearer <token>`.
+
+Default token: `your-secret-token-here`
+
+### Example Usage
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+curl -X POST http://localhost:3001/movies \
+  -H "Authorization: Bearer your-secret-token-here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "The Matrix",
+    "description": "A computer hacker learns from mysterious rebels about the true nature of his reality.",
+    "releaseYear": 1999,
+    "genre": "Sci-Fi"
+  }'
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+## 🔧 Available Scripts
 
-## Resources
+```bash
+# Development
+npm run start:dev          # Start in development mode
+npm run start:debug        # Start in debug mode
+npm run build              # Build the project
+npm run start:prod         # Start in production mode
 
-Check out a few resources that may come in handy when working with NestJS:
+# Code Quality
+npm run lint               # Run ESLint
+npm run format             # Format code with Prettier
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+# Testing
+npm run test               # Run unit tests
+npm run test:watch         # Run tests in watch mode
+npm run test:cov           # Run tests with coverage
+npm run test:e2e           # Run end-to-end tests
 
-## Support
+# Database
+npm run db:start           # Start PostgreSQL
+npm run db:stop            # Stop PostgreSQL
+npm run db:reset           # Reset database
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+# Data
+npm run seed               # Seed database with sample data
 
-## Stay in touch
+# Docker
+npm run docker:build       # Build Docker image
+npm run docker:run         # Run Docker container
+```
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+## 📝 Environment Variables
 
-## License
+Create a `.env` file in the backend directory:
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+```env
+# API Configuration
+PORT=3001
+API_SECRET=your-secret-token-here
+
+# Database Configuration
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+POSTGRES_DB=moviesdb
+```
+
+## 🐳 Docker
+
+### Development
+```bash
+# Build image
+docker build -t movie-manager-backend .
+
+# Run container
+docker run -p 3001:3001 --env-file .env movie-manager-backend
+```
+
+### Production
+```bash
+# Use docker-compose for full stack
+docker-compose up -d
+```
+
+## 🧪 Testing
+
+```bash
+# Unit tests
+npm run test
+
+# Tests with coverage
+npm run test:cov
+
+# E2E tests
+npm run test:e2e
+```
+
+## 📊 API Documentation
+
+Once the application is running, access the Swagger documentation at:
+
+```
+http://localhost:3001/api
+```
+
+## 🔍 Features Implemented
+
+✅ Complete CRUD operations for Movies, Actors, and Ratings
+✅ Search functionality for Movies and Actors
+✅ Entity relationships (Movie ↔ Actor, Movie ↔ Rating)
+✅ Endpoint to get actors in a movie
+✅ Endpoint to get movies by actor
+✅ Token-based authentication for modification operations
+✅ Data validation with class-validator
+✅ API documentation with Swagger
+✅ Database seeding with sample data
+✅ Automatic average rating calculation
+✅ Error handling and proper HTTP status codes
+✅ CORS enabled
+✅ TypeScript with strict typing
+✅ Docker support
+
+## 🚀 Next Steps
+
+1. ✅ Backend API complete
+2. 🔄 Frontend development
+3. 🔄 Unit and integration tests
+4. 🔄 CI/CD pipeline
+5. 🔄 Performance optimization
+6. 🔄 Production deployment
+
+## 📄 License
+
+This project was developed as a technical test.
