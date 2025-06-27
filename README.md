@@ -13,6 +13,7 @@ Complete movie, actor, and rating management system built with NestJS (backend) 
 
 ### Prerequisites
 - Node.js 18+
+- pnpm (https://pnpm.io/installation)
 - Docker and Docker Compose
 - Git
 
@@ -25,6 +26,10 @@ cd movie-manager
 ### 2. Start the environment
 ```bash
 # Start all services
+pnpm install --frozen-lockfile
+# ou para instalar dependências em backend e frontend:
+pnpm install --filter ./backend --filter ./frontend
+
 docker-compose up -d
 ```
 
@@ -53,8 +58,8 @@ movie-manager/
 ```bash
 # Backend
 cd backend
-npm run start:dev          # Development mode
-npm run seed               # Populate database with data
+pnpm start:dev          # Development mode
+pnpm seed               # Populate database with data
 
 # Docker
 docker-compose up -d       # Start services
@@ -116,18 +121,29 @@ POSTGRES_DB=moviesdb
 
 ## 🧪 Testing
 
+### Backend
 ```bash
 cd backend
-npm run test              # Unit tests
-npm run test:e2e          # End-to-end tests
+pnpm test              # Unit tests
+pnpm run test:e2e      # End-to-end tests
 ```
+
+### Frontend
+```bash
+cd frontend
+pnpm test              # Unit tests (frontend)
+```
+
+## 🛠️ CI/CD
+
+O projeto utiliza GitHub Actions para rodar testes e builds automaticamente a cada push ou pull request. O pipeline garante que o código esteja sempre validado antes de ser integrado ao branch principal.
 
 ## 🚀 Next Steps
 
 1. ✅ Complete Backend API
 2. ✅ Next.js Frontend
 3. ✅ Automated Tests
-4. 🔄 CI/CD Pipeline
+4. ✅ CI/CD Pipeline
 5. 🔄 Production Deployment
 
 ## 🚀 Future Features Ideas
@@ -148,4 +164,4 @@ npm run test:e2e          # End-to-end tests
 
 ## 📄 License
 
-This project was developed as a technical test. 
+This project was developed as a technical test.
