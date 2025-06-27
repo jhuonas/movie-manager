@@ -13,7 +13,11 @@ export class AuthGuard implements CanActivate {
       throw new UnauthorizedException('Authorization header is required');
     }
 
-    const token = authHeader.replace('Bearer ', '');
+    if (!authHeader.startsWith('Bearer ')) {
+      throw new UnauthorizedException('Invalid API token');
+    }
+
+    const token = authHeader.replace('Bearer ', '').trim();
 
     if (token !== this.API_SECRET) {
       throw new UnauthorizedException('Invalid API token');
