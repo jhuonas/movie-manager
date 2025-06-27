@@ -2,7 +2,7 @@ import React from "react"
 import { Star, Plus, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import RatingForm from "@/components/forms/RatingForm"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import Pagination from "@/components/Pagination"
@@ -11,19 +11,17 @@ export default function RatingTab({
   ratings,
   setRatings,
   loading,
-  error,
+  setError,
   currentPage,
-  setCurrentPage,
   movies,
-  setMovies,
   selectedMovieForRating,
   setSelectedMovieForRating,
   isFormOpen,
   onFormClose,
   onRatingDelete,
-  totalPages,
   onPageChange,
   itemsPerPage,
+  onRatingFormOpen,
 }: any) {
   const paginateItems = <T,>(items: T[], page: number) => {
     const startIndex = (page - 1) * itemsPerPage
@@ -31,6 +29,11 @@ export default function RatingTab({
   }
 
   const currentRatings = paginateItems(ratings, currentPage)
+  const totalPages = Math.ceil(ratings.length / itemsPerPage)
+
+  const handleRatingAdded = () => {
+    setSelectedMovieForRating(null)
+  }
 
   if (loading) {
     return (
@@ -45,31 +48,55 @@ export default function RatingTab({
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">Ratings</h2>
         <div className="flex gap-2">
-          <Select onValueChange={(value) => setSelectedMovieForRating(Number.parseInt(value))}>
+          <Select
+            value={selectedMovieForRating?.toString() || ""}
+            onValueChange={(value) => setSelectedMovieForRating(Number.parseInt(value))}
+          >
             <SelectTrigger className="w-48">
               <SelectValue placeholder="Select movie" />
             </SelectTrigger>
             <SelectContent>
-              {movies.map((movie: any) => (
+              {movies.length > 0 ? movies.map((movie: any) => (
                 <SelectItem key={movie.id} value={movie.id.toString()}>
                   {movie.title}
                 </SelectItem>
-              ))}
+              )) : (
+                <SelectItem value="" disabled>
+                  No movies available
+                </SelectItem>
+              )}
             </SelectContent>
           </Select>
+          {selectedMovieForRating && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSelectedMovieForRating(null)}
+            >
+              Clear
+            </Button>
+          )}
+          <Button
+            disabled={!selectedMovieForRating}
+            onClick={() => onRatingFormOpen()}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Rating
+          </Button>
           <Dialog open={isFormOpen} onOpenChange={onFormClose}>
-            <DialogTrigger asChild>
-              <Button disabled={!selectedMovieForRating}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Rating
-              </Button>
-            </DialogTrigger>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Add New Rating</DialogTitle>
               </DialogHeader>
               {selectedMovieForRating && (
-                <RatingForm movieId={selectedMovieForRating} onClose={onFormClose} setRatings={setRatings} ratings={ratings} />
+                <RatingForm
+                  movieId={selectedMovieForRating}
+                  onClose={onFormClose}
+                  setRatings={setRatings}
+                  ratings={ratings}
+                  setError={setError}
+                  onRatingAdded={handleRatingAdded}
+                />
               )}
             </DialogContent>
           </Dialog>

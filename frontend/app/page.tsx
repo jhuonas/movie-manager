@@ -33,8 +33,6 @@ export default function MoviePortal() {
   const [isMovieFormOpen, setIsMovieFormOpen] = useState(false)
   const [isActorFormOpen, setIsActorFormOpen] = useState(false)
   const [isRatingFormOpen, setIsRatingFormOpen] = useState(false)
-  const [editingMovie, setEditingMovie] = useState<Movie | null>(null)
-  const [editingActor, setEditingActor] = useState<Actor | null>(null)
   const [selectedMovieForRating, setSelectedMovieForRating] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState("movies")
@@ -44,7 +42,6 @@ export default function MoviePortal() {
 
   const itemsPerPage = 6
 
-  // Lazy loading por aba
   useEffect(() => {
     if (activeTab === "movies" && movies.length === 0) {
       setLoadingMovies(true)
@@ -67,10 +64,8 @@ export default function MoviePortal() {
         .catch(() => setError("Error loading ratings"))
         .finally(() => setLoadingRatings(false))
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab])
 
-  // Filter functions
   const filteredMovies = movies.filter((movie) =>
     movie.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     movie.genre.toLowerCase().includes(searchTerm.toLowerCase())
@@ -81,7 +76,6 @@ export default function MoviePortal() {
     actor.nationality.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
-  // Pagination
   const paginateItems = <T,>(items: T[], page: number) => {
     const startIndex = (page - 1) * itemsPerPage
     return items.slice(startIndex, startIndex + itemsPerPage)
@@ -89,7 +83,6 @@ export default function MoviePortal() {
 
   const getTotalPages = (items: any[]) => Math.ceil(items.length / itemsPerPage)
 
-  // CRUD functions
   const handleDeleteMovie = async (id: number) => {
     try {
       await moviesApi.delete(id)
@@ -187,7 +180,6 @@ export default function MoviePortal() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <header className="bg-white shadow-sm border-b sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
@@ -210,7 +202,6 @@ export default function MoviePortal() {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs defaultValue="movies" className="w-full" onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-3 mb-8">
@@ -231,25 +222,17 @@ export default function MoviePortal() {
           {/* Movies Tab */}
           <TabsContent value="movies">
             <MovieTab
-              movies={filteredMovies}
+              movies={movies}
+              setMovies={setMovies}
+              searchTerm={searchTerm}
               currentPage={currentPage}
-              totalPages={getTotalPages(filteredMovies)}
               onPageChange={setCurrentPage}
               onMovieSelect={(movie: Movie) => setSelectedMovie(movie)}
               onMovieDelete={handleDeleteMovie}
-              onMovieEdit={(movie: Movie) => setEditingMovie(movie)}
               onMovieFormOpen={() => setIsMovieFormOpen(true)}
               isFormOpen={isMovieFormOpen}
               onFormClose={() => setIsMovieFormOpen(false)}
-              onFormSubmit={(movie: Movie) => {
-                if (movie) {
-                  setMovies(movies.map((m) => (m.id === movie.id ? movie : m)))
-                } else {
-                  setMovies([...movies, movie])
-                }
-              }}
-              editingMovie={editingMovie}
-              error={error}
+              setError={setError}
               loading={loadingMovies}
               itemsPerPage={itemsPerPage}
             />
@@ -259,24 +242,16 @@ export default function MoviePortal() {
           <TabsContent value="actors">
             <ActorTab
               actors={filteredActors}
+              setActors={setActors}
+              searchTerm={searchTerm}
               currentPage={currentPage}
-              totalPages={getTotalPages(filteredActors)}
               onPageChange={setCurrentPage}
               onActorSelect={(actor: Actor) => setSelectedActor(actor)}
               onActorDelete={handleDeleteActor}
-              onActorEdit={(actor: Actor) => setEditingActor(actor)}
               onActorFormOpen={() => setIsActorFormOpen(true)}
               isFormOpen={isActorFormOpen}
               onFormClose={() => setIsActorFormOpen(false)}
-              onFormSubmit={(actor: Actor) => {
-                if (actor) {
-                  setActors(actors.map((a) => (a.id === actor.id ? actor : a)))
-                } else {
-                  setActors([...actors, actor])
-                }
-              }}
-              editingActor={editingActor}
-              error={error}
+              setError={setError}
               loading={loadingActors}
               itemsPerPage={itemsPerPage}
             />
@@ -286,22 +261,17 @@ export default function MoviePortal() {
           <TabsContent value="ratings">
             <RatingTab
               ratings={ratings}
+              setRatings={setRatings}
+              movies={movies}
               currentPage={currentPage}
-              totalPages={getTotalPages(ratings)}
               onPageChange={setCurrentPage}
-              onRatingSelect={(rating: Rating) => setSelectedMovieForRating(rating.movieId ?? null)}
               onRatingDelete={handleDeleteRating}
               onRatingFormOpen={() => setIsRatingFormOpen(true)}
               isFormOpen={isRatingFormOpen}
               onFormClose={() => setIsRatingFormOpen(false)}
-              onFormSubmit={(rating: Rating) => {
-                if (rating) {
-                  setRatings([...ratings, rating])
-                }
-              }}
               selectedMovieForRating={selectedMovieForRating}
-              movies={movies}
-              error={error}
+              setSelectedMovieForRating={setSelectedMovieForRating}
+              setError={setError}
               loading={loadingRatings}
               itemsPerPage={itemsPerPage}
             />

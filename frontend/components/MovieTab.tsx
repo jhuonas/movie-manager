@@ -1,9 +1,9 @@
-import React from "react"
-import { Film, Star, Plus, Edit, Trash2, Eye } from "lucide-react"
+import React, { useState } from "react"
+import { Star, Plus, Edit, Trash2, Eye } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import MovieForm from "@/components/forms/MovieForm"
 import Pagination from "@/components/Pagination"
 
@@ -11,25 +11,42 @@ export default function MovieTab({
   movies,
   setMovies,
   loading,
-  error,
+  setError,
   currentPage,
-  setCurrentPage,
   setSelectedMovie,
   isFormOpen,
   onFormClose,
   onMovieDelete,
-  onMovieEdit,
   onMovieSelect,
-  totalPages,
   onPageChange,
   itemsPerPage,
+  searchTerm,
+  onMovieFormOpen,
 }: any) {
+  const [editingMovie, setEditingMovie] = useState<any>(null)
+  const [isEditFormOpen, setIsEditFormOpen] = useState(false)
+
   const paginateItems = <T,>(items: T[], page: number) => {
     const startIndex = (page - 1) * itemsPerPage
     return items.slice(startIndex, startIndex + itemsPerPage)
   }
 
-  const currentMovies = paginateItems(movies, currentPage)
+  const filteredMovies = movies.filter((movie: any) =>
+    movie.title.toLowerCase().includes(searchTerm?.toLowerCase() || '') ||
+    movie.genre.toLowerCase().includes(searchTerm?.toLowerCase() || '')
+  )
+  const currentMovies = paginateItems(filteredMovies, currentPage)
+  const totalPages = Math.ceil(filteredMovies.length / itemsPerPage)
+
+  const handleEditMovie = (movie: any): void => {
+    setEditingMovie(movie)
+    setIsEditFormOpen(true)
+  }
+
+  const handleCloseEditForm = () => {
+    setIsEditFormOpen(false)
+    setEditingMovie(null)
+  }
 
   if (loading) {
     return (
@@ -43,18 +60,30 @@ export default function MovieTab({
     <>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">Movies</h2>
+        <Button onClick={() => onMovieFormOpen()}>
+          <Plus className="h-4 w-4 mr-2" />
+          Add Movie
+        </Button>
         <Dialog open={isFormOpen} onOpenChange={onFormClose}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Movie
-            </Button>
-          </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Add New Movie</DialogTitle>
             </DialogHeader>
-            <MovieForm onClose={onFormClose} setMovies={setMovies} movies={movies} />
+            <MovieForm onClose={onFormClose} setMovies={setMovies} movies={movies} setError={setError} />
+          </DialogContent>
+        </Dialog>
+        <Dialog open={isEditFormOpen} onOpenChange={handleCloseEditForm}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Movie</DialogTitle>
+            </DialogHeader>
+            <MovieForm
+              movie={editingMovie}
+              onClose={handleCloseEditForm}
+              setMovies={setMovies}
+              movies={movies}
+              setError={setError}
+            />
           </DialogContent>
         </Dialog>
       </div>
@@ -83,20 +112,10 @@ export default function MovieTab({
                   <Eye className="h-4 w-4 mr-1" />
                   View
                 </Button>
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button size="sm" variant="outline">
-                      <Edit className="h-4 w-4 mr-1" />
-                      Edit
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Edit Movie</DialogTitle>
-                    </DialogHeader>
-                    <MovieForm movie={movie} onClose={() => onMovieEdit(null)} setMovies={setMovies} movies={movies} />
-                  </DialogContent>
-                </Dialog>
+                <Button size="sm" variant="outline" onClick={() => handleEditMovie(movie)}>
+                  <Edit className="h-4 w-4 mr-1" />
+                  Edit
+                </Button>
                 <Button size="sm" variant="destructive" onClick={() => onMovieDelete(movie.id)}>
                   <Trash2 className="h-4 w-4 mr-1" />
                   Delete

@@ -3,33 +3,56 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Movie, CreateMovieDto, moviesApi } from "@/lib/api"
+import { CreateMovieDto, moviesApi } from "@/lib/api"
 
-export default function MovieForm({ movie, onClose, setMovies, setError, movies }: any) {
+export default function MovieForm({ movie, onClose, setMovies, setError }: any) {
   const [formData, setFormData] = useState({
     title: movie?.title || "",
     description: movie?.description || "",
     releaseYear: movie?.releaseYear || new Date().getFullYear(),
     genre: movie?.genre || "",
   })
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSuccess, setIsSuccess] = useState(false)
+
+  const reloadMovies = async () => {
+    try {
+      const response = await moviesApi.getAll()
+      setMovies(response.data)
+    } catch (err: any) {
+      if (err.response?.status === 401) {
+        setError?.('Authentication error: Invalid or missing token')
+      } else {
+        setError?.('Error loading movies')
+      }
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setIsSubmitting(true)
+    setIsSuccess(false)
     try {
       if (movie) {
         const response = await moviesApi.update(movie.id, formData)
-        setMovies(movies.map((m: Movie) => (m.id === movie.id ? response.data : m)))
+        await reloadMovies()
       } else {
         const response = await moviesApi.create(formData as CreateMovieDto)
-        setMovies([...movies, response.data])
+        await reloadMovies()
       }
-      onClose()
+      setError?.(null)
+      setIsSuccess(true)
+      setTimeout(() => {
+        onClose()
+      }, 500)
     } catch (err: any) {
       if (err.response?.status === 401) {
         setError?.('Authentication error: Invalid or missing token')
       } else {
         setError?.('Error saving movie')
       }
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -73,7 +96,9 @@ export default function MovieForm({ movie, onClose, setMovies, setError, movies 
         />
       </div>
       <div className="flex gap-2">
-        <Button type="submit">{movie ? "Update" : "Add"}</Button>
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? (isSuccess ? "Saved!" : "Saving...") : (movie ? "Update Movie" : "Add Movie")}
+        </Button>
         <Button type="button" variant="outline" onClick={onClose}>
           Cancel
         </Button>
