@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Search, Film, Users, Star, Plus, Edit, Trash2, Eye } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -13,126 +13,64 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-
-// Mock data
-const mockMovies = [
-  {
-    id: 1,
-    title: "O Poderoso Chefão",
-    year: 1972,
-    genre: "Drama",
-    rating: 9.2,
-    actors: [1, 2],
-    reviews: [1, 2],
-  },
-  {
-    id: 2,
-    title: "Pulp Fiction",
-    year: 1994,
-    genre: "Crime",
-    rating: 8.9,
-    actors: [3, 4],
-    reviews: [3],
-  },
-  {
-    id: 3,
-    title: "Cidade de Deus",
-    year: 2002,
-    genre: "Drama",
-    rating: 8.6,
-    actors: [5, 6],
-    reviews: [4, 5],
-  },
-  {
-    id: 4,
-    title: "Parasita",
-    year: 2019,
-    genre: "Thriller",
-    rating: 8.5,
-    actors: [7, 8],
-    reviews: [6],
-  },
-  {
-    id: 5,
-    title: "Interestelar",
-    year: 2014,
-    genre: "Ficção Científica",
-    rating: 8.7,
-    actors: [9, 10],
-    reviews: [7, 8],
-  },
-]
-
-const mockActors = [
-  { id: 1, name: "Marlon Brando", nationality: "Americano", birthDate: "1924-04-03" },
-  { id: 2, name: "Al Pacino", nationality: "Americano", birthDate: "1940-04-25" },
-  { id: 3, name: "John Travolta", nationality: "Americano", birthDate: "1954-02-18" },
-  { id: 4, name: "Samuel L. Jackson", nationality: "Americano", birthDate: "1948-12-21" },
-  { id: 5, name: "Alexandre Rodrigues", nationality: "Brasileiro", birthDate: "1983-05-21" },
-  { id: 6, name: "Leandro Firmino", nationality: "Brasileiro", birthDate: "1978-06-23" },
-  { id: 7, name: "Song Kang-ho", nationality: "Sul-coreano", birthDate: "1967-01-17" },
-  { id: 8, name: "Choi Woo-shik", nationality: "Sul-coreano", birthDate: "1990-03-26" },
-  { id: 9, name: "Matthew McConaughey", nationality: "Americano", birthDate: "1969-11-04" },
-  { id: 10, name: "Anne Hathaway", nationality: "Americana", birthDate: "1982-11-12" },
-]
-
-const mockReviews = [
-  { id: 1, movieId: 1, reviewer: "João Silva", comment: "Obra-prima absoluta do cinema!", rating: 10.0 },
-  { id: 2, movieId: 1, reviewer: "Maria Santos", comment: "Clássico atemporal.", rating: 9.5 },
-  { id: 3, movieId: 2, reviewer: "Pedro Costa", comment: "Tarantino no seu melhor.", rating: 9.0 },
-  { id: 4, movieId: 3, reviewer: "Ana Oliveira", comment: "Retrato brutal e realista.", rating: 8.8 },
-  { id: 5, movieId: 3, reviewer: "Carlos Lima", comment: "Cinema brasileiro de qualidade.", rating: 9.2 },
-  { id: 6, movieId: 4, reviewer: "Lucia Ferreira", comment: "Crítica social brilhante.", rating: 8.7 },
-  { id: 7, movieId: 5, reviewer: "Roberto Alves", comment: "Ficção científica épica.", rating: 8.9 },
-  { id: 8, movieId: 5, reviewer: "Fernanda Rocha", comment: "Visualmente deslumbrante.", rating: 8.5 },
-]
-
-interface Movie {
-  id: number
-  title: string
-  year: number
-  genre: string
-  rating: number
-  actors: number[]
-  reviews: number[]
-}
-
-interface Actor {
-  id: number
-  name: string
-  nationality: string
-  birthDate: string
-}
-
-interface Review {
-  id: number
-  movieId: number
-  reviewer: string
-  comment: string
-  rating: number
-}
+import { moviesApi, actorsApi, ratingsApi, type Movie, type Actor, type Rating, type CreateMovieDto, type CreateActorDto, type CreateRatingDto } from "@/lib/api"
 
 export default function MoviePortal() {
-  const [movies, setMovies] = useState<Movie[]>(mockMovies)
-  const [actors, setActors] = useState<Actor[]>(mockActors)
-  const [reviews, setReviews] = useState<Review[]>(mockReviews)
+  const [movies, setMovies] = useState<Movie[]>([])
+  const [actors, setActors] = useState<Actor[]>([])
+  const [ratings, setRatings] = useState<Rating[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null)
   const [selectedActor, setSelectedActor] = useState<Actor | null>(null)
   const [isMovieFormOpen, setIsMovieFormOpen] = useState(false)
   const [isActorFormOpen, setIsActorFormOpen] = useState(false)
-  const [isReviewFormOpen, setIsReviewFormOpen] = useState(false)
+  const [isRatingFormOpen, setIsRatingFormOpen] = useState(false)
   const [editingMovie, setEditingMovie] = useState<Movie | null>(null)
   const [editingActor, setEditingActor] = useState<Actor | null>(null)
-  const [selectedMovieForReview, setSelectedMovieForReview] = useState<number | null>(null)
+  const [selectedMovieForRating, setSelectedMovieForRating] = useState<number | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   const itemsPerPage = 6
 
-  // Filter functions
-  const filteredMovies = movies.filter((movie) => movie.title.toLowerCase().includes(searchTerm.toLowerCase()))
+  // Carregar dados da API
+  useEffect(() => {
+    loadData()
+  }, [])
 
-  const filteredActors = actors.filter((actor) => actor.name.toLowerCase().includes(searchTerm.toLowerCase()))
+  const loadData = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      const [moviesResponse, actorsResponse, ratingsResponse] = await Promise.all([
+        moviesApi.getAll(),
+        actorsApi.getAll(),
+        ratingsApi.getAll()
+      ])
+
+      setMovies(moviesResponse.data)
+      setActors(actorsResponse.data)
+      setRatings(ratingsResponse.data)
+    } catch (err) {
+      console.error('Erro ao carregar dados:', err)
+      setError('Erro ao carregar dados da API')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Filter functions
+  const filteredMovies = movies.filter((movie) =>
+    movie.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    movie.genre.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
+  const filteredActors = actors.filter((actor) =>
+    actor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    actor.nationality.toLowerCase().includes(searchTerm.toLowerCase())
+  )
 
   // Pagination
   const paginateItems = <T,>(items: T[], page: number) => {
@@ -143,53 +81,78 @@ export default function MoviePortal() {
   const getTotalPages = (items: any[]) => Math.ceil(items.length / itemsPerPage)
 
   // CRUD functions
-  const handleDeleteMovie = (id: number) => {
-    setMovies(movies.filter((movie) => movie.id !== id))
-    setReviews(reviews.filter((review) => review.movieId !== id))
+  const handleDeleteMovie = async (id: number) => {
+    try {
+      await moviesApi.delete(id)
+      setMovies(movies.filter((movie) => movie.id !== id))
+      setRatings(ratings.filter((rating) => rating.movieId !== id))
+    } catch (err) {
+      console.error('Erro ao deletar filme:', err)
+      setError('Erro ao deletar filme')
+    }
   }
 
-  const handleDeleteActor = (id: number) => {
-    setActors(actors.filter((actor) => actor.id !== id))
+  const handleDeleteActor = async (id: number) => {
+    try {
+      await actorsApi.delete(id)
+      setActors(actors.filter((actor) => actor.id !== id))
+    } catch (err) {
+      console.error('Erro ao deletar ator:', err)
+      setError('Erro ao deletar ator')
+    }
   }
 
-  const handleDeleteReview = (id: number) => {
-    setReviews(reviews.filter((review) => review.id !== id))
+  const handleDeleteRating = async (id: number) => {
+    try {
+      await ratingsApi.delete(id)
+      setRatings(ratings.filter((rating) => rating.id !== id))
+    } catch (err) {
+      console.error('Erro ao deletar avaliação:', err)
+      setError('Erro ao deletar avaliação')
+    }
   }
 
-  const getActorsByIds = (actorIds: number[]) => {
-    return actors.filter((actor) => actorIds.includes(actor.id))
+  const getRatingsByMovieId = (movieId: number) => {
+    const movie = movies.find(m => m.id === movieId)
+    if (movie && movie.ratings) {
+      return movie.ratings
+    }
+    return ratings.filter((rating) => rating.movieId === movieId)
   }
 
-  const getReviewsByMovieId = (movieId: number) => {
-    return reviews.filter((review) => review.movieId === movieId)
-  }
-
-  const getMoviesByActorId = (actorId: number) => {
-    return movies.filter((movie) => movie.actors.includes(actorId))
+  const getMoviesByActorId = async (actorId: number) => {
+    try {
+      const response = await actorsApi.getMovies(actorId)
+      return response.data
+    } catch (err) {
+      console.error('Erro ao buscar filmes do ator:', err)
+      return []
+    }
   }
 
   const MovieForm = ({ movie, onClose }: { movie?: Movie; onClose: () => void }) => {
     const [formData, setFormData] = useState({
       title: movie?.title || "",
-      year: movie?.year || new Date().getFullYear(),
+      description: movie?.description || "",
+      releaseYear: movie?.releaseYear || new Date().getFullYear(),
       genre: movie?.genre || "",
-      rating: movie?.rating || 0,
     })
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault()
-      if (movie) {
-        setMovies(movies.map((m) => (m.id === movie.id ? { ...m, ...formData } : m)))
-      } else {
-        const newMovie: Movie = {
-          id: Math.max(...movies.map((m) => m.id)) + 1,
-          ...formData,
-          actors: [],
-          reviews: [],
+      try {
+        if (movie) {
+          const response = await moviesApi.update(movie.id, formData)
+          setMovies(movies.map((m) => (m.id === movie.id ? response.data : m)))
+        } else {
+          const response = await moviesApi.create(formData as CreateMovieDto)
+          setMovies([...movies, response.data])
         }
-        setMovies([...movies, newMovie])
+        onClose()
+      } catch (err) {
+        console.error('Erro ao salvar filme:', err)
+        setError('Erro ao salvar filme')
       }
-      onClose()
     }
 
     return (
@@ -204,12 +167,21 @@ export default function MoviePortal() {
           />
         </div>
         <div>
-          <Label htmlFor="year">Ano</Label>
+          <Label htmlFor="description">Descrição</Label>
+          <Textarea
+            id="description"
+            value={formData.description}
+            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            required
+          />
+        </div>
+        <div>
+          <Label htmlFor="releaseYear">Ano de Lançamento</Label>
           <Input
-            id="year"
+            id="releaseYear"
             type="number"
-            value={formData.year}
-            onChange={(e) => setFormData({ ...formData, year: Number.parseInt(e.target.value) })}
+            value={formData.releaseYear}
+            onChange={(e) => setFormData({ ...formData, releaseYear: Number.parseInt(e.target.value) })}
             required
           />
         </div>
@@ -219,19 +191,6 @@ export default function MoviePortal() {
             id="genre"
             value={formData.genre}
             onChange={(e) => setFormData({ ...formData, genre: e.target.value })}
-            required
-          />
-        </div>
-        <div>
-          <Label htmlFor="rating">Nota</Label>
-          <Input
-            id="rating"
-            type="number"
-            step="0.1"
-            min="0"
-            max="10"
-            value={formData.rating}
-            onChange={(e) => setFormData({ ...formData, rating: Number.parseFloat(e.target.value) })}
             required
           />
         </div>
@@ -248,22 +207,26 @@ export default function MoviePortal() {
   const ActorForm = ({ actor, onClose }: { actor?: Actor; onClose: () => void }) => {
     const [formData, setFormData] = useState({
       name: actor?.name || "",
+      biography: actor?.biography || "",
       nationality: actor?.nationality || "",
       birthDate: actor?.birthDate || "",
     })
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault()
-      if (actor) {
-        setActors(actors.map((a) => (a.id === actor.id ? { ...a, ...formData } : a)))
-      } else {
-        const newActor: Actor = {
-          id: Math.max(...actors.map((a) => a.id)) + 1,
-          ...formData,
+      try {
+        if (actor) {
+          const response = await actorsApi.update(actor.id, formData)
+          setActors(actors.map((a) => (a.id === actor.id ? response.data : a)))
+        } else {
+          const response = await actorsApi.create(formData as CreateActorDto)
+          setActors([...actors, response.data])
         }
-        setActors([...actors, newActor])
+        onClose()
+      } catch (err) {
+        console.error('Erro ao salvar ator:', err)
+        setError('Erro ao salvar ator')
       }
-      onClose()
     }
 
     return (
@@ -274,6 +237,15 @@ export default function MoviePortal() {
             id="name"
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            required
+          />
+        </div>
+        <div>
+          <Label htmlFor="biography">Biografia</Label>
+          <Textarea
+            id="biography"
+            value={formData.biography}
+            onChange={(e) => setFormData({ ...formData, biography: e.target.value })}
             required
           />
         </div>
@@ -306,32 +278,36 @@ export default function MoviePortal() {
     )
   }
 
-  const ReviewForm = ({ movieId, onClose }: { movieId: number; onClose: () => void }) => {
+  const RatingForm = ({ movieId, onClose }: { movieId: number; onClose: () => void }) => {
     const [formData, setFormData] = useState({
-      reviewer: "",
+      reviewerName: "",
       comment: "",
-      rating: 0,
+      score: 0,
     })
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault()
-      const newReview: Review = {
-        id: Math.max(...reviews.map((r) => r.id)) + 1,
-        movieId,
-        ...formData,
+      try {
+        const response = await ratingsApi.create({
+          movieId,
+          ...formData,
+        } as CreateRatingDto)
+        setRatings([...ratings, response.data])
+        onClose()
+      } catch (err) {
+        console.error('Erro ao salvar avaliação:', err)
+        setError('Erro ao salvar avaliação')
       }
-      setReviews([...reviews, newReview])
-      onClose()
     }
 
     return (
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <Label htmlFor="reviewer">Nome do Avaliador</Label>
+          <Label htmlFor="reviewerName">Nome do Avaliador</Label>
           <Input
-            id="reviewer"
-            value={formData.reviewer}
-            onChange={(e) => setFormData({ ...formData, reviewer: e.target.value })}
+            id="reviewerName"
+            value={formData.reviewerName}
+            onChange={(e) => setFormData({ ...formData, reviewerName: e.target.value })}
             required
           />
         </div>
@@ -345,15 +321,15 @@ export default function MoviePortal() {
           />
         </div>
         <div>
-          <Label htmlFor="rating">Nota (0-10)</Label>
+          <Label htmlFor="score">Nota (0.5-5.0)</Label>
           <Input
-            id="rating"
+            id="score"
             type="number"
-            step="0.1"
-            min="0"
-            max="10"
-            value={formData.rating}
-            onChange={(e) => setFormData({ ...formData, rating: Number.parseFloat(e.target.value) })}
+            step="0.5"
+            min="0.5"
+            max="5"
+            value={formData.score}
+            onChange={(e) => setFormData({ ...formData, score: Number.parseFloat(e.target.value) })}
             required
           />
         </div>
@@ -388,6 +364,28 @@ export default function MoviePortal() {
       </Button>
     </div>
   )
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Carregando dados...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">{error}</p>
+          <Button onClick={loadData}>Tentar Novamente</Button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -426,7 +424,7 @@ export default function MoviePortal() {
               <Users className="h-4 w-4" />
               Atores
             </TabsTrigger>
-            <TabsTrigger value="reviews" className="flex items-center gap-2">
+            <TabsTrigger value="ratings" className="flex items-center gap-2">
               <Star className="h-4 w-4" />
               Avaliações
             </TabsTrigger>
@@ -459,15 +457,16 @@ export default function MoviePortal() {
                     <CardTitle className="flex items-start justify-between">
                       <div>
                         <h3 className="font-semibold">{movie.title}</h3>
-                        <p className="text-sm text-gray-500">{movie.year}</p>
+                        <p className="text-sm text-gray-500">{movie.releaseYear}</p>
                       </div>
                       <div className="flex items-center gap-1">
                         <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                        <span className="text-sm font-medium">{movie.rating}</span>
+                        <span className="text-sm font-medium">{parseFloat(movie.averageRating || '0').toFixed(1)}</span>
                       </div>
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
+                    <p className="text-sm text-gray-600 mb-4 line-clamp-3">{movie.description}</p>
                     <Badge variant="secondary" className="mb-4">
                       {movie.genre}
                     </Badge>
@@ -540,6 +539,7 @@ export default function MoviePortal() {
                     <p className="text-sm text-gray-600 mb-4">
                       <strong>Nascimento:</strong> {new Date(actor.birthDate).toLocaleDateString("pt-BR")}
                     </p>
+                    <p className="text-sm text-gray-600 mb-4 line-clamp-3">{actor.biography}</p>
                     <div className="flex gap-2">
                       <Button size="sm" variant="outline" onClick={() => setSelectedActor(actor)}>
                         <Eye className="h-4 w-4 mr-1" />
@@ -576,12 +576,12 @@ export default function MoviePortal() {
             />
           </TabsContent>
 
-          {/* Reviews Tab */}
-          <TabsContent value="reviews">
+          {/* Ratings Tab */}
+          <TabsContent value="ratings">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold">Avaliações</h2>
               <div className="flex gap-2">
-                <Select onValueChange={(value) => setSelectedMovieForReview(Number.parseInt(value))}>
+                <Select onValueChange={(value) => setSelectedMovieForRating(Number.parseInt(value))}>
                   <SelectTrigger className="w-48">
                     <SelectValue placeholder="Selecionar filme" />
                   </SelectTrigger>
@@ -593,9 +593,9 @@ export default function MoviePortal() {
                     ))}
                   </SelectContent>
                 </Select>
-                <Dialog open={isReviewFormOpen} onOpenChange={setIsReviewFormOpen}>
+                <Dialog open={isRatingFormOpen} onOpenChange={setIsRatingFormOpen}>
                   <DialogTrigger asChild>
-                    <Button disabled={!selectedMovieForReview}>
+                    <Button disabled={!selectedMovieForRating}>
                       <Plus className="h-4 w-4 mr-2" />
                       Adicionar Avaliação
                     </Button>
@@ -604,8 +604,8 @@ export default function MoviePortal() {
                     <DialogHeader>
                       <DialogTitle>Adicionar Nova Avaliação</DialogTitle>
                     </DialogHeader>
-                    {selectedMovieForReview && (
-                      <ReviewForm movieId={selectedMovieForReview} onClose={() => setIsReviewFormOpen(false)} />
+                    {selectedMovieForRating && (
+                      <RatingForm movieId={selectedMovieForRating} onClose={() => setIsRatingFormOpen(false)} />
                     )}
                   </DialogContent>
                 </Dialog>
@@ -613,34 +613,34 @@ export default function MoviePortal() {
             </div>
 
             <div className="space-y-4">
-              {paginateItems(reviews, currentPage).map((review) => {
-                const movie = movies.find((m) => m.id === review.movieId)
+              {paginateItems(ratings, currentPage).map((rating) => {
+                const movie = movies.find((m) => m.id === rating.movieId)
                 return (
-                  <Card key={review.id}>
+                  <Card key={rating.id}>
                     <CardContent className="pt-6">
                       <div className="flex justify-between items-start mb-4">
                         <div>
                           <h3 className="font-semibold">{movie?.title}</h3>
-                          <p className="text-sm text-gray-600">por {review.reviewer}</p>
+                          <p className="text-sm text-gray-600">por {rating.reviewerName}</p>
                         </div>
                         <div className="flex items-center gap-2">
                           <div className="flex items-center gap-1">
                             <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                            <span className="font-medium">{review.rating.toFixed(1)}</span>
+                            <span className="font-medium">{parseFloat(rating.score).toFixed(1)}</span>
                           </div>
-                          <Button size="sm" variant="destructive" onClick={() => handleDeleteReview(review.id)}>
+                          <Button size="sm" variant="destructive" onClick={() => handleDeleteRating(rating.id)}>
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
                       </div>
-                      <p className="text-gray-700">{review.comment}</p>
+                      <p className="text-gray-700">{rating.comment}</p>
                     </CardContent>
                   </Card>
                 )
               })}
             </div>
 
-            <Pagination currentPage={currentPage} totalPages={getTotalPages(reviews)} onPageChange={setCurrentPage} />
+            <Pagination currentPage={currentPage} totalPages={getTotalPages(ratings)} onPageChange={setCurrentPage} />
           </TabsContent>
         </Tabs>
 
@@ -654,42 +654,43 @@ export default function MoviePortal() {
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <strong>Ano:</strong> {selectedMovie.year}
+                    <strong>Ano:</strong> {selectedMovie.releaseYear}
                   </div>
                   <div>
                     <strong>Gênero:</strong> {selectedMovie.genre}
                   </div>
-                  <div>
-                    <strong>Nota:</strong> {selectedMovie.rating}
+                </div>
+                <div>
+                  <strong>Descrição:</strong>
+                  <p className="text-gray-600 mt-1">{selectedMovie.description}</p>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold mb-2">Avaliações:</h4>
+                  <div className="space-y-2 max-h-40 overflow-y-auto">
+                    {getRatingsByMovieId(selectedMovie.id).map((rating) => (
+                      <div key={rating.id} className="border rounded p-3">
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="font-medium">{rating.reviewerName}</span>
+                          <div className="flex items-center gap-1">
+                            <Star className="h-4 w-4 text-yellow-500 fill-current" />
+                            <span>{parseFloat(rating.score).toFixed(1)}</span>
+                          </div>
+                        </div>
+                        <p className="text-sm text-gray-600">{rating.comment}</p>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
                 <div>
                   <h4 className="font-semibold mb-2">Atores:</h4>
                   <div className="flex flex-wrap gap-2">
-                    {getActorsByIds(selectedMovie.actors).map((actor) => (
+                    {selectedMovie.actors?.map((actor) => (
                       <Badge key={actor.id} variant="outline">
                         {actor.name}
                       </Badge>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <h4 className="font-semibold mb-2">Avaliações:</h4>
-                  <div className="space-y-2 max-h-40 overflow-y-auto">
-                    {getReviewsByMovieId(selectedMovie.id).map((review) => (
-                      <div key={review.id} className="border rounded p-3">
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="font-medium">{review.reviewer}</span>
-                          <div className="flex items-center gap-1">
-                            <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                            <span>{review.rating.toFixed(1)}</span>
-                          </div>
-                        </div>
-                        <p className="text-sm text-gray-600">{review.comment}</p>
-                      </div>
-                    ))}
+                    )) || <p className="text-gray-500">Nenhum ator cadastrado</p>}
                   </div>
                 </div>
               </div>
@@ -713,23 +714,9 @@ export default function MoviePortal() {
                     <strong>Nascimento:</strong> {new Date(selectedActor.birthDate).toLocaleDateString("pt-BR")}
                   </div>
                 </div>
-
                 <div>
-                  <h4 className="font-semibold mb-2">Filmes:</h4>
-                  <div className="space-y-2">
-                    {getMoviesByActorId(selectedActor.id).map((movie) => (
-                      <div key={movie.id} className="flex justify-between items-center border rounded p-3">
-                        <div>
-                          <span className="font-medium">{movie.title}</span>
-                          <span className="text-gray-500 ml-2">({movie.year})</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                          <span>{movie.rating}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                  <strong>Biografia:</strong>
+                  <p className="text-gray-600 mt-1">{selectedActor.biography}</p>
                 </div>
               </div>
             )}
