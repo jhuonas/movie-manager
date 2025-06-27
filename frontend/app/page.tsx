@@ -14,6 +14,13 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { moviesApi, actorsApi, ratingsApi, type Movie, type Actor, type Rating, type CreateMovieDto, type CreateActorDto, type CreateRatingDto } from "@/lib/api"
+import MovieTab from "@/components/MovieTab"
+import ActorTab from "@/components/ActorTab"
+import RatingTab from "@/components/RatingTab"
+import Pagination from "@/components/Pagination"
+import MovieForm from "@/components/forms/MovieForm"
+import ActorForm from "@/components/forms/ActorForm"
+import RatingForm from "@/components/forms/RatingForm"
 
 export default function MoviePortal() {
   const [movies, setMovies] = useState<Movie[]>([])
@@ -43,21 +50,21 @@ export default function MoviePortal() {
       setLoadingMovies(true)
       moviesApi.getAll()
         .then(res => setMovies(res.data))
-        .catch(() => setError("Erro ao carregar filmes"))
+        .catch(() => setError("Error loading movies"))
         .finally(() => setLoadingMovies(false))
     }
     if (activeTab === "actors" && actors.length === 0) {
       setLoadingActors(true)
       actorsApi.getAll()
         .then(res => setActors(res.data))
-        .catch(() => setError("Erro ao carregar atores"))
+        .catch(() => setError("Error loading actors"))
         .finally(() => setLoadingActors(false))
     }
     if (activeTab === "ratings" && ratings.length === 0) {
       setLoadingRatings(true)
       ratingsApi.getAll()
         .then(res => setRatings(res.data))
-        .catch(() => setError("Erro ao carregar avaliações"))
+        .catch(() => setError("Error loading ratings"))
         .finally(() => setLoadingRatings(false))
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -91,9 +98,9 @@ export default function MoviePortal() {
     } catch (err: any) {
       console.error('Erro ao deletar filme:', err)
       if (err.response?.status === 401) {
-        setError('Erro de autenticação: Token inválido ou ausente')
+        setError('Authentication error: Invalid or missing token')
       } else {
-        setError('Erro ao deletar filme')
+        setError('Error deleting movie')
       }
     }
   }
@@ -105,9 +112,9 @@ export default function MoviePortal() {
     } catch (err: any) {
       console.error('Erro ao deletar ator:', err)
       if (err.response?.status === 401) {
-        setError('Erro de autenticação: Token inválido ou ausente')
+        setError('Authentication error: Invalid or missing token')
       } else {
-        setError('Erro ao deletar ator')
+        setError('Error deleting actor')
       }
     }
   }
@@ -119,9 +126,9 @@ export default function MoviePortal() {
     } catch (err: any) {
       console.error('Erro ao deletar avaliação:', err)
       if (err.response?.status === 401) {
-        setError('Erro de autenticação: Token inválido ou ausente')
+        setError('Authentication error: Invalid or missing token')
       } else {
-        setError('Erro ao deletar avaliação')
+        setError('Error deleting rating')
       }
     }
   }
@@ -144,253 +151,6 @@ export default function MoviePortal() {
     }
   }
 
-  const MovieForm = ({ movie, onClose }: { movie?: Movie; onClose: () => void }) => {
-    const [formData, setFormData] = useState({
-      title: movie?.title || "",
-      description: movie?.description || "",
-      releaseYear: movie?.releaseYear || new Date().getFullYear(),
-      genre: movie?.genre || "",
-    })
-
-    const handleSubmit = async (e: React.FormEvent) => {
-      e.preventDefault()
-      try {
-        if (movie) {
-          const response = await moviesApi.update(movie.id, formData)
-          setMovies(movies.map((m) => (m.id === movie.id ? response.data : m)))
-        } else {
-          const response = await moviesApi.create(formData as CreateMovieDto)
-          setMovies([...movies, response.data])
-        }
-        onClose()
-      } catch (err: any) {
-        console.error('Erro ao salvar filme:', err)
-        if (err.response?.status === 401) {
-          setError('Erro de autenticação: Token inválido ou ausente')
-        } else {
-          setError('Erro ao salvar filme')
-        }
-      }
-    }
-
-    return (
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <Label htmlFor="title">Título</Label>
-          <Input
-            id="title"
-            value={formData.title}
-            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-            required
-          />
-        </div>
-        <div>
-          <Label htmlFor="description">Descrição</Label>
-          <Textarea
-            id="description"
-            value={formData.description}
-            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            required
-          />
-        </div>
-        <div>
-          <Label htmlFor="releaseYear">Ano de Lançamento</Label>
-          <Input
-            id="releaseYear"
-            type="number"
-            value={formData.releaseYear}
-            onChange={(e) => setFormData({ ...formData, releaseYear: Number.parseInt(e.target.value) })}
-            required
-          />
-        </div>
-        <div>
-          <Label htmlFor="genre">Gênero</Label>
-          <Input
-            id="genre"
-            value={formData.genre}
-            onChange={(e) => setFormData({ ...formData, genre: e.target.value })}
-            required
-          />
-        </div>
-        <div className="flex gap-2">
-          <Button type="submit">{movie ? "Atualizar" : "Adicionar"}</Button>
-          <Button type="button" variant="outline" onClick={onClose}>
-            Cancelar
-          </Button>
-        </div>
-      </form>
-    )
-  }
-
-  const ActorForm = ({ actor, onClose }: { actor?: Actor; onClose: () => void }) => {
-    const [formData, setFormData] = useState({
-      name: actor?.name || "",
-      biography: actor?.biography || "",
-      nationality: actor?.nationality || "",
-      birthDate: actor?.birthDate || "",
-    })
-
-    const handleSubmit = async (e: React.FormEvent) => {
-      e.preventDefault()
-      try {
-        if (actor) {
-          const response = await actorsApi.update(actor.id, formData)
-          setActors(actors.map((a) => (a.id === actor.id ? response.data : a)))
-        } else {
-          const response = await actorsApi.create(formData as CreateActorDto)
-          setActors([...actors, response.data])
-        }
-        onClose()
-      } catch (err: any) {
-        console.error('Erro ao salvar ator:', err)
-        if (err.response?.status === 401) {
-          setError('Erro de autenticação: Token inválido ou ausente')
-        } else {
-          setError('Erro ao salvar ator')
-        }
-      }
-    }
-
-    return (
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <Label htmlFor="name">Nome</Label>
-          <Input
-            id="name"
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            required
-          />
-        </div>
-        <div>
-          <Label htmlFor="biography">Biografia</Label>
-          <Textarea
-            id="biography"
-            value={formData.biography}
-            onChange={(e) => setFormData({ ...formData, biography: e.target.value })}
-            required
-          />
-        </div>
-        <div>
-          <Label htmlFor="nationality">Nacionalidade</Label>
-          <Input
-            id="nationality"
-            value={formData.nationality}
-            onChange={(e) => setFormData({ ...formData, nationality: e.target.value })}
-            required
-          />
-        </div>
-        <div>
-          <Label htmlFor="birthDate">Data de Nascimento</Label>
-          <Input
-            id="birthDate"
-            type="date"
-            value={formData.birthDate}
-            onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
-            required
-          />
-        </div>
-        <div className="flex gap-2">
-          <Button type="submit">{actor ? "Atualizar" : "Adicionar"}</Button>
-          <Button type="button" variant="outline" onClick={onClose}>
-            Cancelar
-          </Button>
-        </div>
-      </form>
-    )
-  }
-
-  const RatingForm = ({ movieId, onClose }: { movieId: number; onClose: () => void }) => {
-    const [formData, setFormData] = useState({
-      reviewerName: "",
-      comment: "",
-      score: 0,
-    })
-
-    const handleSubmit = async (e: React.FormEvent) => {
-      e.preventDefault()
-      try {
-        const response = await ratingsApi.create({
-          movieId,
-          ...formData,
-        } as CreateRatingDto)
-        setRatings([...ratings, response.data])
-        onClose()
-      } catch (err: any) {
-        console.error('Erro ao salvar avaliação:', err)
-        if (err.response?.status === 401) {
-          setError('Erro de autenticação: Token inválido ou ausente')
-        } else {
-          setError('Erro ao salvar avaliação')
-        }
-      }
-    }
-
-    return (
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <Label htmlFor="reviewerName">Nome do Avaliador</Label>
-          <Input
-            id="reviewerName"
-            value={formData.reviewerName}
-            onChange={(e) => setFormData({ ...formData, reviewerName: e.target.value })}
-            required
-          />
-        </div>
-        <div>
-          <Label htmlFor="comment">Comentário</Label>
-          <Textarea
-            id="comment"
-            value={formData.comment}
-            onChange={(e) => setFormData({ ...formData, comment: e.target.value })}
-            required
-          />
-        </div>
-        <div>
-          <Label htmlFor="score">Nota (0.5-5.0)</Label>
-          <Input
-            id="score"
-            type="number"
-            step="0.5"
-            min="0.5"
-            max="5"
-            value={formData.score}
-            onChange={(e) => setFormData({ ...formData, score: Number.parseFloat(e.target.value) })}
-            required
-          />
-        </div>
-        <div className="flex gap-2">
-          <Button type="submit">Adicionar Avaliação</Button>
-          <Button type="button" variant="outline" onClick={onClose}>
-            Cancelar
-          </Button>
-        </div>
-      </form>
-    )
-  }
-
-  const Pagination = ({
-    currentPage,
-    totalPages,
-    onPageChange,
-  }: {
-    currentPage: number
-    totalPages: number
-    onPageChange: (page: number) => void
-  }) => (
-    <div className="flex justify-center gap-2 mt-6">
-      <Button variant="outline" onClick={() => onPageChange(currentPage - 1)} disabled={currentPage === 1}>
-        Anterior
-      </Button>
-      <span className="flex items-center px-4">
-        Página {currentPage} de {totalPages}
-      </span>
-      <Button variant="outline" onClick={() => onPageChange(currentPage + 1)} disabled={currentPage === totalPages}>
-        Próxima
-      </Button>
-    </div>
-  )
-
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -402,24 +162,24 @@ export default function MoviePortal() {
               setLoadingMovies(true)
               moviesApi.getAll()
                 .then(res => setMovies(res.data))
-                .catch(() => setError("Erro ao carregar filmes"))
+                .catch(() => setError("Error loading movies"))
                 .finally(() => setLoadingMovies(false))
             }
             if (activeTab === "actors") {
               setLoadingActors(true)
               actorsApi.getAll()
                 .then(res => setActors(res.data))
-                .catch(() => setError("Erro ao carregar atores"))
+                .catch(() => setError("Error loading actors"))
                 .finally(() => setLoadingActors(false))
             }
             if (activeTab === "ratings") {
               setLoadingRatings(true)
               ratingsApi.getAll()
                 .then(res => setRatings(res.data))
-                .catch(() => setError("Erro ao carregar avaliações"))
+                .catch(() => setError("Error loading ratings"))
                 .finally(() => setLoadingRatings(false))
             }
-          }}>Tentar Novamente</Button>
+          }}>Try Again</Button>
         </div>
       </div>
     )
@@ -433,13 +193,13 @@ export default function MoviePortal() {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-3">
               <Film className="h-8 w-8 text-blue-600" />
-              <h1 className="text-xl font-bold text-gray-900">Portal de Filmes</h1>
+              <h1 className="text-xl font-bold text-gray-900">Movie Portal</h1>
             </div>
             <div className="flex-1 max-w-md mx-8">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
-                  placeholder="Buscar filmes ou atores..."
+                  placeholder="Search movies or actors..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
@@ -456,256 +216,95 @@ export default function MoviePortal() {
           <TabsList className="grid w-full grid-cols-3 mb-8">
             <TabsTrigger value="movies" className="flex items-center gap-2">
               <Film className="h-4 w-4" />
-              Filmes
+              Movies
             </TabsTrigger>
             <TabsTrigger value="actors" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
-              Atores
+              Actors
             </TabsTrigger>
             <TabsTrigger value="ratings" className="flex items-center gap-2">
               <Star className="h-4 w-4" />
-              Avaliações
+              Ratings
             </TabsTrigger>
           </TabsList>
 
           {/* Movies Tab */}
           <TabsContent value="movies">
-            {loadingMovies ? (
-              <div className="flex justify-center items-center min-h-[200px]">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-                <span className="ml-4 text-gray-600">Carregando filmes...</span>
-              </div>
-            ) : (
-              <>
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-2xl font-bold">Filmes</h2>
-                  <Dialog open={isMovieFormOpen} onOpenChange={setIsMovieFormOpen}>
-                    <DialogTrigger asChild>
-                      <Button>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Adicionar Filme
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Adicionar Novo Filme</DialogTitle>
-                      </DialogHeader>
-                      <MovieForm onClose={() => setIsMovieFormOpen(false)} />
-                    </DialogContent>
-                  </Dialog>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {paginateItems(filteredMovies, currentPage).map((movie) => (
-                    <Card key={movie.id} className="hover:shadow-lg transition-shadow">
-                      <CardHeader>
-                        <CardTitle className="flex items-start justify-between">
-                          <div>
-                            <h3 className="font-semibold">{movie.title}</h3>
-                            <p className="text-sm text-gray-500">{movie.releaseYear}</p>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                            <span className="text-sm font-medium">{parseFloat(movie.averageRating || '0').toFixed(1)}</span>
-                          </div>
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-sm text-gray-600 mb-4 line-clamp-3">{movie.description}</p>
-                        <Badge variant="secondary" className="mb-4">
-                          {movie.genre}
-                        </Badge>
-                        <div className="flex gap-2">
-                          <Button size="sm" variant="outline" onClick={() => setSelectedMovie(movie)}>
-                            <Eye className="h-4 w-4 mr-1" />
-                            Ver
-                          </Button>
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button size="sm" variant="outline">
-                                <Edit className="h-4 w-4 mr-1" />
-                                Editar
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                              <DialogHeader>
-                                <DialogTitle>Editar Filme</DialogTitle>
-                              </DialogHeader>
-                              <MovieForm movie={movie} onClose={() => setEditingMovie(null)} />
-                            </DialogContent>
-                          </Dialog>
-                          <Button size="sm" variant="destructive" onClick={() => handleDeleteMovie(movie.id)}>
-                            <Trash2 className="h-4 w-4 mr-1" />
-                            Excluir
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-
-                <Pagination
-                  currentPage={currentPage}
-                  totalPages={getTotalPages(filteredMovies)}
-                  onPageChange={setCurrentPage}
-                />
-              </>
-            )}
+            <MovieTab
+              movies={filteredMovies}
+              currentPage={currentPage}
+              totalPages={getTotalPages(filteredMovies)}
+              onPageChange={setCurrentPage}
+              onMovieSelect={(movie: Movie) => setSelectedMovie(movie)}
+              onMovieDelete={handleDeleteMovie}
+              onMovieEdit={(movie: Movie) => setEditingMovie(movie)}
+              onMovieFormOpen={() => setIsMovieFormOpen(true)}
+              isFormOpen={isMovieFormOpen}
+              onFormClose={() => setIsMovieFormOpen(false)}
+              onFormSubmit={(movie: Movie) => {
+                if (movie) {
+                  setMovies(movies.map((m) => (m.id === movie.id ? movie : m)))
+                } else {
+                  setMovies([...movies, movie])
+                }
+              }}
+              editingMovie={editingMovie}
+              error={error}
+              loading={loadingMovies}
+              itemsPerPage={itemsPerPage}
+            />
           </TabsContent>
 
           {/* Actors Tab */}
           <TabsContent value="actors">
-            {loadingActors ? (
-              <div className="flex justify-center items-center min-h-[200px]">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-                <span className="ml-4 text-gray-600">Carregando atores...</span>
-              </div>
-            ) : (
-              <>
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-2xl font-bold">Atores</h2>
-                  <Dialog open={isActorFormOpen} onOpenChange={setIsActorFormOpen}>
-                    <DialogTrigger asChild>
-                      <Button>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Adicionar Ator
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Adicionar Novo Ator</DialogTitle>
-                      </DialogHeader>
-                      <ActorForm onClose={() => setIsActorFormOpen(false)} />
-                    </DialogContent>
-                  </Dialog>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {paginateItems(filteredActors, currentPage).map((actor) => (
-                    <Card key={actor.id} className="hover:shadow-lg transition-shadow">
-                      <CardHeader>
-                        <CardTitle>{actor.name}</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-sm text-gray-600 mb-2">
-                          <strong>Nacionalidade:</strong> {actor.nationality}
-                        </p>
-                        <p className="text-sm text-gray-600 mb-4">
-                          <strong>Nascimento:</strong> {new Date(actor.birthDate).toLocaleDateString("pt-BR")}
-                        </p>
-                        <p className="text-sm text-gray-600 mb-4 line-clamp-3">{actor.biography}</p>
-                        <div className="flex gap-2">
-                          <Button size="sm" variant="outline" onClick={() => setSelectedActor(actor)}>
-                            <Eye className="h-4 w-4 mr-1" />
-                            Ver
-                          </Button>
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button size="sm" variant="outline">
-                                <Edit className="h-4 w-4 mr-1" />
-                                Editar
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                              <DialogHeader>
-                                <DialogTitle>Editar Ator</DialogTitle>
-                              </DialogHeader>
-                              <ActorForm actor={actor} onClose={() => setEditingActor(null)} />
-                            </DialogContent>
-                          </Dialog>
-                          <Button size="sm" variant="destructive" onClick={() => handleDeleteActor(actor.id)}>
-                            <Trash2 className="h-4 w-4 mr-1" />
-                            Excluir
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-
-                <Pagination
-                  currentPage={currentPage}
-                  totalPages={getTotalPages(filteredActors)}
-                  onPageChange={setCurrentPage}
-                />
-              </>
-            )}
+            <ActorTab
+              actors={filteredActors}
+              currentPage={currentPage}
+              totalPages={getTotalPages(filteredActors)}
+              onPageChange={setCurrentPage}
+              onActorSelect={(actor: Actor) => setSelectedActor(actor)}
+              onActorDelete={handleDeleteActor}
+              onActorEdit={(actor: Actor) => setEditingActor(actor)}
+              onActorFormOpen={() => setIsActorFormOpen(true)}
+              isFormOpen={isActorFormOpen}
+              onFormClose={() => setIsActorFormOpen(false)}
+              onFormSubmit={(actor: Actor) => {
+                if (actor) {
+                  setActors(actors.map((a) => (a.id === actor.id ? actor : a)))
+                } else {
+                  setActors([...actors, actor])
+                }
+              }}
+              editingActor={editingActor}
+              error={error}
+              loading={loadingActors}
+              itemsPerPage={itemsPerPage}
+            />
           </TabsContent>
 
           {/* Ratings Tab */}
           <TabsContent value="ratings">
-            {loadingRatings ? (
-              <div className="flex justify-center items-center min-h-[200px]">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-                <span className="ml-4 text-gray-600">Carregando avaliações...</span>
-              </div>
-            ) : (
-              <>
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-2xl font-bold">Avaliações</h2>
-                  <div className="flex gap-2">
-                    <Select onValueChange={(value) => setSelectedMovieForRating(Number.parseInt(value))}>
-                      <SelectTrigger className="w-48">
-                        <SelectValue placeholder="Selecionar filme" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {movies.map((movie) => (
-                          <SelectItem key={movie.id} value={movie.id.toString()}>
-                            {movie.title}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Dialog open={isRatingFormOpen} onOpenChange={setIsRatingFormOpen}>
-                      <DialogTrigger asChild>
-                        <Button disabled={!selectedMovieForRating}>
-                          <Plus className="h-4 w-4 mr-2" />
-                          Adicionar Avaliação
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Adicionar Nova Avaliação</DialogTitle>
-                        </DialogHeader>
-                        {selectedMovieForRating && (
-                          <RatingForm movieId={selectedMovieForRating} onClose={() => setIsRatingFormOpen(false)} />
-                        )}
-                      </DialogContent>
-                    </Dialog>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  {paginateItems(ratings, currentPage).map((rating) => {
-                    const movie = movies.find((m) => m.id === rating.movieId)
-                    return (
-                      <Card key={rating.id}>
-                        <CardContent className="pt-6">
-                          <div className="flex justify-between items-start mb-4">
-                            <div>
-                              <h3 className="font-semibold">{movie?.title}</h3>
-                              <p className="text-sm text-gray-600">por {rating.reviewerName}</p>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <div className="flex items-center gap-1">
-                                <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                                <span className="font-medium">{parseFloat(rating.score).toFixed(1)}</span>
-                              </div>
-                              <Button size="sm" variant="destructive" onClick={() => handleDeleteRating(rating.id)}>
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                          <p className="text-gray-700">{rating.comment}</p>
-                        </CardContent>
-                      </Card>
-                    )
-                  })}
-                </div>
-
-                <Pagination currentPage={currentPage} totalPages={getTotalPages(ratings)} onPageChange={setCurrentPage} />
-              </>
-            )}
+            <RatingTab
+              ratings={ratings}
+              currentPage={currentPage}
+              totalPages={getTotalPages(ratings)}
+              onPageChange={setCurrentPage}
+              onRatingSelect={(rating: Rating) => setSelectedMovieForRating(rating.movieId ?? null)}
+              onRatingDelete={handleDeleteRating}
+              onRatingFormOpen={() => setIsRatingFormOpen(true)}
+              isFormOpen={isRatingFormOpen}
+              onFormClose={() => setIsRatingFormOpen(false)}
+              onFormSubmit={(rating: Rating) => {
+                if (rating) {
+                  setRatings([...ratings, rating])
+                }
+              }}
+              selectedMovieForRating={selectedMovieForRating}
+              movies={movies}
+              error={error}
+              loading={loadingRatings}
+              itemsPerPage={itemsPerPage}
+            />
           </TabsContent>
         </Tabs>
 
@@ -719,19 +318,19 @@ export default function MoviePortal() {
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <strong>Ano:</strong> {selectedMovie.releaseYear}
+                    <strong>Year:</strong> {selectedMovie.releaseYear}
                   </div>
                   <div>
-                    <strong>Gênero:</strong> {selectedMovie.genre}
+                    <strong>Genre:</strong> {selectedMovie.genre}
                   </div>
                 </div>
                 <div>
-                  <strong>Descrição:</strong>
+                  <strong>Description:</strong>
                   <p className="text-gray-600 mt-1">{selectedMovie.description}</p>
                 </div>
 
                 <div>
-                  <h4 className="font-semibold mb-2">Avaliações:</h4>
+                  <h4 className="font-semibold mb-2">Ratings:</h4>
                   <div className="space-y-2 max-h-40 overflow-y-auto">
                     {getRatingsByMovieId(selectedMovie.id).map((rating) => (
                       <div key={rating.id} className="border rounded p-3">
@@ -749,13 +348,13 @@ export default function MoviePortal() {
                 </div>
 
                 <div>
-                  <h4 className="font-semibold mb-2">Atores:</h4>
+                  <h4 className="font-semibold mb-2">Actors:</h4>
                   <div className="flex flex-wrap gap-2">
                     {selectedMovie.actors?.map((actor) => (
                       <Badge key={actor.id} variant="outline">
                         {actor.name}
                       </Badge>
-                    )) || <p className="text-gray-500">Nenhum ator cadastrado</p>}
+                    )) || <p className="text-gray-500">No actors registered</p>}
                   </div>
                 </div>
               </div>
@@ -773,14 +372,14 @@ export default function MoviePortal() {
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <strong>Nacionalidade:</strong> {selectedActor.nationality}
+                    <strong>Nationality:</strong> {selectedActor.nationality}
                   </div>
                   <div>
-                    <strong>Nascimento:</strong> {new Date(selectedActor.birthDate).toLocaleDateString("pt-BR")}
+                    <strong>Birth Date:</strong> {new Date(selectedActor.birthDate).toLocaleDateString("en-US")}
                   </div>
                 </div>
                 <div>
-                  <strong>Biografia:</strong>
+                  <strong>Biography:</strong>
                   <p className="text-gray-600 mt-1">{selectedActor.biography}</p>
                 </div>
               </div>
