@@ -23,18 +23,31 @@ services:
       - movie-manager-network
 
   backend:
-    build: ./backend
+    build: 
+      context: ./backend
+      target: production
     container_name: movie-manager-backend
     restart: always
     ports:
       - '3001:3001'
     environment:
       - NODE_ENV=development
-    env_file:
-      - ./backend/.env
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=moviesdb
+      - PORT=3001
+      - API_SECRET=your-secret-token-here
     depends_on:
       postgres:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     networks:
       - movie-manager-network
 
