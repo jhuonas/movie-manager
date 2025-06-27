@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getAuthToken, isTokenConfigured } from './auth';
 
 const API_BASE_URL = 'http://localhost:3001';
 
@@ -9,10 +10,27 @@ export const api = axios.create({
   },
 });
 
+api.interceptors.request.use(
+  (config) => {
+    if (isTokenConfigured()) {
+      config.headers.Authorization = `Bearer your-secret-token-here`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     console.error('API Error:', error);
+
+    if (error.response?.status === 401) {
+      console.error('Erro de autenticação: Token inválido ou ausente');
+    }
+
     return Promise.reject(error);
   }
 );

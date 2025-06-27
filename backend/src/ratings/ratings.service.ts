@@ -12,7 +12,7 @@ export class RatingsService {
     private ratingsRepository: Repository<Rating>,
     @InjectRepository(Movie)
     private moviesRepository: Repository<Movie>,
-  ) {}
+  ) { }
 
   async create(createRatingDto: CreateRatingDto): Promise<Rating> {
     const movie = await this.moviesRepository.findOne({
@@ -31,10 +31,9 @@ export class RatingsService {
     });
 
     const savedRating = await this.ratingsRepository.save(rating);
-    
-    // Update movie average rating
+
     await this.updateMovieAverageRating(movie.id);
-    
+
     return savedRating;
   }
 
@@ -67,22 +66,20 @@ export class RatingsService {
   async update(id: number, updateRatingDto: UpdateRatingDto): Promise<Rating> {
     const rating = await this.findOne(id);
     Object.assign(rating, updateRatingDto);
-    
+
     const updatedRating = await this.ratingsRepository.save(rating);
-    
-    // Update movie average rating
+
     await this.updateMovieAverageRating(rating.movie.id);
-    
+
     return updatedRating;
   }
 
   async remove(id: number): Promise<void> {
     const rating = await this.findOne(id);
     const movieId = rating.movie.id;
-    
+
     await this.ratingsRepository.remove(rating);
-    
-    // Update movie average rating
+
     await this.updateMovieAverageRating(movieId);
   }
 
@@ -93,7 +90,7 @@ export class RatingsService {
 
     if (ratings.length > 0) {
       const averageRating = ratings.reduce((sum, rating) => sum + rating.score, 0) / ratings.length;
-      
+
       await this.moviesRepository.update(movieId, {
         averageRating: Math.round(averageRating * 10) / 10,
       });

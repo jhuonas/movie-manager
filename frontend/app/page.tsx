@@ -29,37 +29,39 @@ export default function MoviePortal() {
   const [editingMovie, setEditingMovie] = useState<Movie | null>(null)
   const [editingActor, setEditingActor] = useState<Actor | null>(null)
   const [selectedMovieForRating, setSelectedMovieForRating] = useState<number | null>(null)
-  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState("movies")
+  const [loadingMovies, setLoadingMovies] = useState(false)
+  const [loadingActors, setLoadingActors] = useState(false)
+  const [loadingRatings, setLoadingRatings] = useState(false)
 
   const itemsPerPage = 6
 
-  // Carregar dados da API
+  // Lazy loading por aba
   useEffect(() => {
-    loadData()
-  }, [])
-
-  const loadData = async () => {
-    try {
-      setLoading(true)
-      setError(null)
-
-      const [moviesResponse, actorsResponse, ratingsResponse] = await Promise.all([
-        moviesApi.getAll(),
-        actorsApi.getAll(),
-        ratingsApi.getAll()
-      ])
-
-      setMovies(moviesResponse.data)
-      setActors(actorsResponse.data)
-      setRatings(ratingsResponse.data)
-    } catch (err) {
-      console.error('Erro ao carregar dados:', err)
-      setError('Erro ao carregar dados da API')
-    } finally {
-      setLoading(false)
+    if (activeTab === "movies" && movies.length === 0) {
+      setLoadingMovies(true)
+      moviesApi.getAll()
+        .then(res => setMovies(res.data))
+        .catch(() => setError("Erro ao carregar filmes"))
+        .finally(() => setLoadingMovies(false))
     }
-  }
+    if (activeTab === "actors" && actors.length === 0) {
+      setLoadingActors(true)
+      actorsApi.getAll()
+        .then(res => setActors(res.data))
+        .catch(() => setError("Erro ao carregar atores"))
+        .finally(() => setLoadingActors(false))
+    }
+    if (activeTab === "ratings" && ratings.length === 0) {
+      setLoadingRatings(true)
+      ratingsApi.getAll()
+        .then(res => setRatings(res.data))
+        .catch(() => setError("Erro ao carregar avaliações"))
+        .finally(() => setLoadingRatings(false))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab])
 
   // Filter functions
   const filteredMovies = movies.filter((movie) =>
@@ -86,9 +88,13 @@ export default function MoviePortal() {
       await moviesApi.delete(id)
       setMovies(movies.filter((movie) => movie.id !== id))
       setRatings(ratings.filter((rating) => rating.movieId !== id))
-    } catch (err) {
+    } catch (err: any) {
       console.error('Erro ao deletar filme:', err)
-      setError('Erro ao deletar filme')
+      if (err.response?.status === 401) {
+        setError('Erro de autenticação: Token inválido ou ausente')
+      } else {
+        setError('Erro ao deletar filme')
+      }
     }
   }
 
@@ -96,9 +102,13 @@ export default function MoviePortal() {
     try {
       await actorsApi.delete(id)
       setActors(actors.filter((actor) => actor.id !== id))
-    } catch (err) {
+    } catch (err: any) {
       console.error('Erro ao deletar ator:', err)
-      setError('Erro ao deletar ator')
+      if (err.response?.status === 401) {
+        setError('Erro de autenticação: Token inválido ou ausente')
+      } else {
+        setError('Erro ao deletar ator')
+      }
     }
   }
 
@@ -106,9 +116,13 @@ export default function MoviePortal() {
     try {
       await ratingsApi.delete(id)
       setRatings(ratings.filter((rating) => rating.id !== id))
-    } catch (err) {
+    } catch (err: any) {
       console.error('Erro ao deletar avaliação:', err)
-      setError('Erro ao deletar avaliação')
+      if (err.response?.status === 401) {
+        setError('Erro de autenticação: Token inválido ou ausente')
+      } else {
+        setError('Erro ao deletar avaliação')
+      }
     }
   }
 
@@ -149,9 +163,13 @@ export default function MoviePortal() {
           setMovies([...movies, response.data])
         }
         onClose()
-      } catch (err) {
+      } catch (err: any) {
         console.error('Erro ao salvar filme:', err)
-        setError('Erro ao salvar filme')
+        if (err.response?.status === 401) {
+          setError('Erro de autenticação: Token inválido ou ausente')
+        } else {
+          setError('Erro ao salvar filme')
+        }
       }
     }
 
@@ -223,9 +241,13 @@ export default function MoviePortal() {
           setActors([...actors, response.data])
         }
         onClose()
-      } catch (err) {
+      } catch (err: any) {
         console.error('Erro ao salvar ator:', err)
-        setError('Erro ao salvar ator')
+        if (err.response?.status === 401) {
+          setError('Erro de autenticação: Token inválido ou ausente')
+        } else {
+          setError('Erro ao salvar ator')
+        }
       }
     }
 
@@ -294,9 +316,13 @@ export default function MoviePortal() {
         } as CreateRatingDto)
         setRatings([...ratings, response.data])
         onClose()
-      } catch (err) {
+      } catch (err: any) {
         console.error('Erro ao salvar avaliação:', err)
-        setError('Erro ao salvar avaliação')
+        if (err.response?.status === 401) {
+          setError('Erro de autenticação: Token inválido ou ausente')
+        } else {
+          setError('Erro ao salvar avaliação')
+        }
       }
     }
 
@@ -365,23 +391,35 @@ export default function MoviePortal() {
     </div>
   )
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Carregando dados...</p>
-        </div>
-      </div>
-    )
-  }
-
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-600 mb-4">{error}</p>
-          <Button onClick={loadData}>Tentar Novamente</Button>
+          <Button onClick={() => {
+            setError(null)
+            if (activeTab === "movies") {
+              setLoadingMovies(true)
+              moviesApi.getAll()
+                .then(res => setMovies(res.data))
+                .catch(() => setError("Erro ao carregar filmes"))
+                .finally(() => setLoadingMovies(false))
+            }
+            if (activeTab === "actors") {
+              setLoadingActors(true)
+              actorsApi.getAll()
+                .then(res => setActors(res.data))
+                .catch(() => setError("Erro ao carregar atores"))
+                .finally(() => setLoadingActors(false))
+            }
+            if (activeTab === "ratings") {
+              setLoadingRatings(true)
+              ratingsApi.getAll()
+                .then(res => setRatings(res.data))
+                .catch(() => setError("Erro ao carregar avaliações"))
+                .finally(() => setLoadingRatings(false))
+            }
+          }}>Tentar Novamente</Button>
         </div>
       </div>
     )
@@ -414,7 +452,7 @@ export default function MoviePortal() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Tabs defaultValue="movies" className="w-full">
+        <Tabs defaultValue="movies" className="w-full" onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-3 mb-8">
             <TabsTrigger value="movies" className="flex items-center gap-2">
               <Film className="h-4 w-4" />
@@ -432,215 +470,242 @@ export default function MoviePortal() {
 
           {/* Movies Tab */}
           <TabsContent value="movies">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold">Filmes</h2>
-              <Dialog open={isMovieFormOpen} onOpenChange={setIsMovieFormOpen}>
-                <DialogTrigger asChild>
-                  <Button>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Adicionar Filme
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Adicionar Novo Filme</DialogTitle>
-                  </DialogHeader>
-                  <MovieForm onClose={() => setIsMovieFormOpen(false)} />
-                </DialogContent>
-              </Dialog>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {paginateItems(filteredMovies, currentPage).map((movie) => (
-                <Card key={movie.id} className="hover:shadow-lg transition-shadow">
-                  <CardHeader>
-                    <CardTitle className="flex items-start justify-between">
-                      <div>
-                        <h3 className="font-semibold">{movie.title}</h3>
-                        <p className="text-sm text-gray-500">{movie.releaseYear}</p>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                        <span className="text-sm font-medium">{parseFloat(movie.averageRating || '0').toFixed(1)}</span>
-                      </div>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-gray-600 mb-4 line-clamp-3">{movie.description}</p>
-                    <Badge variant="secondary" className="mb-4">
-                      {movie.genre}
-                    </Badge>
-                    <div className="flex gap-2">
-                      <Button size="sm" variant="outline" onClick={() => setSelectedMovie(movie)}>
-                        <Eye className="h-4 w-4 mr-1" />
-                        Ver
+            {loadingMovies ? (
+              <div className="flex justify-center items-center min-h-[200px]">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                <span className="ml-4 text-gray-600">Carregando filmes...</span>
+              </div>
+            ) : (
+              <>
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-2xl font-bold">Filmes</h2>
+                  <Dialog open={isMovieFormOpen} onOpenChange={setIsMovieFormOpen}>
+                    <DialogTrigger asChild>
+                      <Button>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Adicionar Filme
                       </Button>
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button size="sm" variant="outline">
-                            <Edit className="h-4 w-4 mr-1" />
-                            Editar
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Adicionar Novo Filme</DialogTitle>
+                      </DialogHeader>
+                      <MovieForm onClose={() => setIsMovieFormOpen(false)} />
+                    </DialogContent>
+                  </Dialog>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {paginateItems(filteredMovies, currentPage).map((movie) => (
+                    <Card key={movie.id} className="hover:shadow-lg transition-shadow">
+                      <CardHeader>
+                        <CardTitle className="flex items-start justify-between">
+                          <div>
+                            <h3 className="font-semibold">{movie.title}</h3>
+                            <p className="text-sm text-gray-500">{movie.releaseYear}</p>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Star className="h-4 w-4 text-yellow-500 fill-current" />
+                            <span className="text-sm font-medium">{parseFloat(movie.averageRating || '0').toFixed(1)}</span>
+                          </div>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-sm text-gray-600 mb-4 line-clamp-3">{movie.description}</p>
+                        <Badge variant="secondary" className="mb-4">
+                          {movie.genre}
+                        </Badge>
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="outline" onClick={() => setSelectedMovie(movie)}>
+                            <Eye className="h-4 w-4 mr-1" />
+                            Ver
                           </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Editar Filme</DialogTitle>
-                          </DialogHeader>
-                          <MovieForm movie={movie} onClose={() => setEditingMovie(null)} />
-                        </DialogContent>
-                      </Dialog>
-                      <Button size="sm" variant="destructive" onClick={() => handleDeleteMovie(movie.id)}>
-                        <Trash2 className="h-4 w-4 mr-1" />
-                        Excluir
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button size="sm" variant="outline">
+                                <Edit className="h-4 w-4 mr-1" />
+                                Editar
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Editar Filme</DialogTitle>
+                              </DialogHeader>
+                              <MovieForm movie={movie} onClose={() => setEditingMovie(null)} />
+                            </DialogContent>
+                          </Dialog>
+                          <Button size="sm" variant="destructive" onClick={() => handleDeleteMovie(movie.id)}>
+                            <Trash2 className="h-4 w-4 mr-1" />
+                            Excluir
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
 
-            <Pagination
-              currentPage={currentPage}
-              totalPages={getTotalPages(filteredMovies)}
-              onPageChange={setCurrentPage}
-            />
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={getTotalPages(filteredMovies)}
+                  onPageChange={setCurrentPage}
+                />
+              </>
+            )}
           </TabsContent>
 
           {/* Actors Tab */}
           <TabsContent value="actors">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold">Atores</h2>
-              <Dialog open={isActorFormOpen} onOpenChange={setIsActorFormOpen}>
-                <DialogTrigger asChild>
-                  <Button>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Adicionar Ator
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Adicionar Novo Ator</DialogTitle>
-                  </DialogHeader>
-                  <ActorForm onClose={() => setIsActorFormOpen(false)} />
-                </DialogContent>
-              </Dialog>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {paginateItems(filteredActors, currentPage).map((actor) => (
-                <Card key={actor.id} className="hover:shadow-lg transition-shadow">
-                  <CardHeader>
-                    <CardTitle>{actor.name}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-gray-600 mb-2">
-                      <strong>Nacionalidade:</strong> {actor.nationality}
-                    </p>
-                    <p className="text-sm text-gray-600 mb-4">
-                      <strong>Nascimento:</strong> {new Date(actor.birthDate).toLocaleDateString("pt-BR")}
-                    </p>
-                    <p className="text-sm text-gray-600 mb-4 line-clamp-3">{actor.biography}</p>
-                    <div className="flex gap-2">
-                      <Button size="sm" variant="outline" onClick={() => setSelectedActor(actor)}>
-                        <Eye className="h-4 w-4 mr-1" />
-                        Ver
+            {loadingActors ? (
+              <div className="flex justify-center items-center min-h-[200px]">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                <span className="ml-4 text-gray-600">Carregando atores...</span>
+              </div>
+            ) : (
+              <>
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-2xl font-bold">Atores</h2>
+                  <Dialog open={isActorFormOpen} onOpenChange={setIsActorFormOpen}>
+                    <DialogTrigger asChild>
+                      <Button>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Adicionar Ator
                       </Button>
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button size="sm" variant="outline">
-                            <Edit className="h-4 w-4 mr-1" />
-                            Editar
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Adicionar Novo Ator</DialogTitle>
+                      </DialogHeader>
+                      <ActorForm onClose={() => setIsActorFormOpen(false)} />
+                    </DialogContent>
+                  </Dialog>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {paginateItems(filteredActors, currentPage).map((actor) => (
+                    <Card key={actor.id} className="hover:shadow-lg transition-shadow">
+                      <CardHeader>
+                        <CardTitle>{actor.name}</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-sm text-gray-600 mb-2">
+                          <strong>Nacionalidade:</strong> {actor.nationality}
+                        </p>
+                        <p className="text-sm text-gray-600 mb-4">
+                          <strong>Nascimento:</strong> {new Date(actor.birthDate).toLocaleDateString("pt-BR")}
+                        </p>
+                        <p className="text-sm text-gray-600 mb-4 line-clamp-3">{actor.biography}</p>
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="outline" onClick={() => setSelectedActor(actor)}>
+                            <Eye className="h-4 w-4 mr-1" />
+                            Ver
                           </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Editar Ator</DialogTitle>
-                          </DialogHeader>
-                          <ActorForm actor={actor} onClose={() => setEditingActor(null)} />
-                        </DialogContent>
-                      </Dialog>
-                      <Button size="sm" variant="destructive" onClick={() => handleDeleteActor(actor.id)}>
-                        <Trash2 className="h-4 w-4 mr-1" />
-                        Excluir
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button size="sm" variant="outline">
+                                <Edit className="h-4 w-4 mr-1" />
+                                Editar
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Editar Ator</DialogTitle>
+                              </DialogHeader>
+                              <ActorForm actor={actor} onClose={() => setEditingActor(null)} />
+                            </DialogContent>
+                          </Dialog>
+                          <Button size="sm" variant="destructive" onClick={() => handleDeleteActor(actor.id)}>
+                            <Trash2 className="h-4 w-4 mr-1" />
+                            Excluir
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
 
-            <Pagination
-              currentPage={currentPage}
-              totalPages={getTotalPages(filteredActors)}
-              onPageChange={setCurrentPage}
-            />
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={getTotalPages(filteredActors)}
+                  onPageChange={setCurrentPage}
+                />
+              </>
+            )}
           </TabsContent>
 
           {/* Ratings Tab */}
           <TabsContent value="ratings">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold">Avaliações</h2>
-              <div className="flex gap-2">
-                <Select onValueChange={(value) => setSelectedMovieForRating(Number.parseInt(value))}>
-                  <SelectTrigger className="w-48">
-                    <SelectValue placeholder="Selecionar filme" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {movies.map((movie) => (
-                      <SelectItem key={movie.id} value={movie.id.toString()}>
-                        {movie.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Dialog open={isRatingFormOpen} onOpenChange={setIsRatingFormOpen}>
-                  <DialogTrigger asChild>
-                    <Button disabled={!selectedMovieForRating}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Adicionar Avaliação
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Adicionar Nova Avaliação</DialogTitle>
-                    </DialogHeader>
-                    {selectedMovieForRating && (
-                      <RatingForm movieId={selectedMovieForRating} onClose={() => setIsRatingFormOpen(false)} />
-                    )}
-                  </DialogContent>
-                </Dialog>
+            {loadingRatings ? (
+              <div className="flex justify-center items-center min-h-[200px]">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                <span className="ml-4 text-gray-600">Carregando avaliações...</span>
               </div>
-            </div>
+            ) : (
+              <>
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-2xl font-bold">Avaliações</h2>
+                  <div className="flex gap-2">
+                    <Select onValueChange={(value) => setSelectedMovieForRating(Number.parseInt(value))}>
+                      <SelectTrigger className="w-48">
+                        <SelectValue placeholder="Selecionar filme" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {movies.map((movie) => (
+                          <SelectItem key={movie.id} value={movie.id.toString()}>
+                            {movie.title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Dialog open={isRatingFormOpen} onOpenChange={setIsRatingFormOpen}>
+                      <DialogTrigger asChild>
+                        <Button disabled={!selectedMovieForRating}>
+                          <Plus className="h-4 w-4 mr-2" />
+                          Adicionar Avaliação
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Adicionar Nova Avaliação</DialogTitle>
+                        </DialogHeader>
+                        {selectedMovieForRating && (
+                          <RatingForm movieId={selectedMovieForRating} onClose={() => setIsRatingFormOpen(false)} />
+                        )}
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                </div>
 
-            <div className="space-y-4">
-              {paginateItems(ratings, currentPage).map((rating) => {
-                const movie = movies.find((m) => m.id === rating.movieId)
-                return (
-                  <Card key={rating.id}>
-                    <CardContent className="pt-6">
-                      <div className="flex justify-between items-start mb-4">
-                        <div>
-                          <h3 className="font-semibold">{movie?.title}</h3>
-                          <p className="text-sm text-gray-600">por {rating.reviewerName}</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="flex items-center gap-1">
-                            <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                            <span className="font-medium">{parseFloat(rating.score).toFixed(1)}</span>
+                <div className="space-y-4">
+                  {paginateItems(ratings, currentPage).map((rating) => {
+                    const movie = movies.find((m) => m.id === rating.movieId)
+                    return (
+                      <Card key={rating.id}>
+                        <CardContent className="pt-6">
+                          <div className="flex justify-between items-start mb-4">
+                            <div>
+                              <h3 className="font-semibold">{movie?.title}</h3>
+                              <p className="text-sm text-gray-600">por {rating.reviewerName}</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-1">
+                                <Star className="h-4 w-4 text-yellow-500 fill-current" />
+                                <span className="font-medium">{parseFloat(rating.score).toFixed(1)}</span>
+                              </div>
+                              <Button size="sm" variant="destructive" onClick={() => handleDeleteRating(rating.id)}>
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </div>
-                          <Button size="sm" variant="destructive" onClick={() => handleDeleteRating(rating.id)}>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                      <p className="text-gray-700">{rating.comment}</p>
-                    </CardContent>
-                  </Card>
-                )
-              })}
-            </div>
+                          <p className="text-gray-700">{rating.comment}</p>
+                        </CardContent>
+                      </Card>
+                    )
+                  })}
+                </div>
 
-            <Pagination currentPage={currentPage} totalPages={getTotalPages(ratings)} onPageChange={setCurrentPage} />
+                <Pagination currentPage={currentPage} totalPages={getTotalPages(ratings)} onPageChange={setCurrentPage} />
+              </>
+            )}
           </TabsContent>
         </Tabs>
 
