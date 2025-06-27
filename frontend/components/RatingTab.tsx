@@ -1,5 +1,5 @@
 import React from "react"
-import { Star, Plus, Trash2 } from "lucide-react"
+import { Star, Plus, Trash2, Calendar, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -104,26 +104,45 @@ export default function RatingTab({
       </div>
       <div className="space-y-4">
         {currentRatings.map((rating: any) => {
-          const movie = movies.find((m: any) => m.id === rating.movieId)
           return (
             <Card key={rating.id}>
               <CardContent className="pt-6">
-                <div className="flex justify-between items-start mb-4">
+                <div className="flex justify-between items-start mb-3">
                   <div>
-                    <h3 className="font-semibold">{movie?.title}</h3>
-                    <p className="text-sm text-gray-600">by {rating.reviewerName}</p>
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="font-semibold text-lg">{rating.movieTitle}</h3>
+                      <span className="text-sm text-gray-500">({rating.movieReleaseYear})</span>
+                    </div>
+                    <div className="flex items-center gap-4 text-sm text-gray-600">
+                      <div className="flex items-center gap-1">
+                        <User className="h-3 w-3" />
+                        <span className="font-medium">Reviewer:</span> {rating.reviewerName}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Calendar className="h-3 w-3" />
+                        <span className="font-medium">Date:</span> {new Date(rating.createdAt).toLocaleDateString("en-US", {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </div>
+                    </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="flex items-center gap-1">
                       <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                      <span className="font-medium">{parseFloat(rating.score).toFixed(1)}</span>
+                      <span className="font-bold text-lg">{parseFloat(rating.score).toFixed(1)}</span>
                     </div>
                     <Button size="sm" variant="destructive" onClick={() => onRatingDelete(rating.id)}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
-                <p className="text-gray-700">{rating.comment}</p>
+                <div className="border-t pt-3">
+                  <p className="text-gray-700 leading-relaxed">{rating.comment}</p>
+                </div>
               </CardContent>
             </Card>
           )

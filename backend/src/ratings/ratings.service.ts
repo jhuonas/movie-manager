@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Rating } from '../entities/rating.entity';
 import { Movie } from '../entities/movie.entity';
-import { CreateRatingDto, UpdateRatingDto } from '../dto/rating.dto';
+import { CreateRatingDto, UpdateRatingDto, RatingResponseDto } from '../dto/rating.dto';
 
 @Injectable()
 export class RatingsService {
@@ -13,6 +13,20 @@ export class RatingsService {
     @InjectRepository(Movie)
     private moviesRepository: Repository<Movie>,
   ) { }
+
+  private transformRatingToResponse(rating: Rating): RatingResponseDto {
+    return {
+      id: rating.id,
+      score: rating.score,
+      comment: rating.comment,
+      reviewerName: rating.reviewerName,
+      movieId: rating.movie.id,
+      movieTitle: rating.movie.title,
+      movieReleaseYear: rating.movie.releaseYear,
+      createdAt: rating.createdAt,
+      updatedAt: rating.updatedAt,
+    };
+  }
 
   async create(createRatingDto: CreateRatingDto): Promise<Rating> {
     const movie = await this.moviesRepository.findOne({
@@ -37,13 +51,14 @@ export class RatingsService {
     return savedRating;
   }
 
-  async findAll(): Promise<Rating[]> {
-    return this.ratingsRepository.find({
+  async findAll(): Promise<RatingResponseDto[]> {
+    const ratings = await this.ratingsRepository.find({
       relations: ['movie'],
     });
+    return ratings.map(rating => this.transformRatingToResponse(rating));
   }
 
-  async findOne(id: number): Promise<Rating> {
+  async findOne(id: number): Promise<RatingResponseDto> {
     const rating = await this.ratingsRepository.findOne({
       where: { id },
       relations: ['movie'],
@@ -53,29 +68,46 @@ export class RatingsService {
       throw new NotFoundException(`Rating with ID ${id} not found`);
     }
 
-    return rating;
+    return this.transformRatingToResponse(rating);
   }
 
-  async findByMovie(movieId: number): Promise<Rating[]> {
-    return this.ratingsRepository.find({
+  async findByMovie(movieId: number): Promise<RatingResponseDto[]> {
+    const ratings = await this.ratingsRepository.find({
       where: { movie: { id: movieId } },
       relations: ['movie'],
     });
+    return ratings.map(rating => this.transformRatingToResponse(rating));
   }
 
-  async update(id: number, updateRatingDto: UpdateRatingDto): Promise<Rating> {
-    const rating = await this.findOne(id);
-    Object.assign(rating, updateRatingDto);
+  async update(id: number, updateRatingDto: UpdateRatingDto): Promise<RatingResponseDto> {
+    const originalRating = await this.ratingsRepository.findOne({
+      where: { id },
+      relations: ['movie'],
+    });
 
-    const updatedRating = await this.ratingsRepository.save(rating);
+    if (!originalRating) {
+      throw new NotFoundException(`Rating with ID ${id} not found`);
+    }
 
-    await this.updateMovieAverageRating(rating.movie.id);
+    Object.assign(originalRating, updateRatingDto);
 
-    return updatedRating;
+    const updatedRating = await this.ratingsRepository.save(originalRating);
+
+    await this.updateMovieAverageRating(updatedRating.movie.id);
+
+    return this.transformRatingToResponse(updatedRating);
   }
 
   async remove(id: number): Promise<void> {
-    const rating = await this.findOne(id);
+    const rating = await this.ratingsRepository.findOne({
+      where: { id },
+      relations: ['movie'],
+    });
+
+    if (!rating) {
+      throw new NotFoundException(`Rating with ID ${id} not found`);
+    }
+
     const movieId = rating.movie.id;
 
     await this.ratingsRepository.remove(rating);

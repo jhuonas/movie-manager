@@ -69,4 +69,60 @@ export class UpdateRatingDto {
   })
   @IsString()
   reviewerName: string;
+}
+
+export class RatingResponseDto {
+  @ApiProperty({
+    description: 'The rating ID',
+    example: 1
+  })
+  id: number;
+
+  @ApiProperty({
+    description: 'The rating score',
+    example: 4.5
+  })
+  score: number;
+
+  @ApiProperty({
+    description: 'The review comment',
+    example: 'Excellent movie with outstanding performances and compelling storyline.'
+  })
+  comment: string;
+
+  @ApiProperty({
+    description: 'The name of the reviewer',
+    example: 'John Doe'
+  })
+  reviewerName: string;
+
+  @ApiProperty({
+    description: 'The movie ID',
+    example: 1
+  })
+  movieId: number;
+
+  @ApiProperty({
+    description: 'The movie title',
+    example: 'The Shawshank Redemption'
+  })
+  movieTitle: string;
+
+  @ApiProperty({
+    description: 'The movie release year',
+    example: 1994
+  })
+  movieReleaseYear: number;
+
+  @ApiProperty({
+    description: 'When the rating was created',
+    example: '2024-01-01T00:00:00.000Z'
+  })
+  createdAt: Date;
+
+  @ApiProperty({
+    description: 'When the rating was last updated',
+    example: '2024-01-01T00:00:00.000Z'
+  })
+  updatedAt: Date;
 } 

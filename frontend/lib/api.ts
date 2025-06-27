@@ -64,6 +64,8 @@ export interface Rating {
   comment: string;
   reviewerName: string;
   movieId?: number;
+  movieTitle?: string;
+  movieReleaseYear?: number;
   createdAt: string;
   updatedAt: string;
 }

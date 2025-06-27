@@ -37,6 +37,8 @@ export class RatingsController {
         comment: 'Excellent movie with outstanding performances and compelling storyline.',
         reviewerName: 'John Doe',
         movieId: 1,
+        movieTitle: 'The Shawshank Redemption',
+        movieReleaseYear: 1994,
         createdAt: '2024-01-01T00:00:00.000Z',
         updatedAt: '2024-01-01T00:00:00.000Z'
       }
@@ -65,6 +67,8 @@ export class RatingsController {
           comment: 'Excellent movie with outstanding performances and compelling storyline.',
           reviewerName: 'John Doe',
           movieId: 1,
+          movieTitle: 'The Shawshank Redemption',
+          movieReleaseYear: 1994,
           createdAt: '2024-01-01T00:00:00.000Z',
           updatedAt: '2024-01-01T00:00:00.000Z'
         }
@@ -92,6 +96,8 @@ export class RatingsController {
           comment: 'Excellent movie with outstanding performances and compelling storyline.',
           reviewerName: 'John Doe',
           movieId: 1,
+          movieTitle: 'The Shawshank Redemption',
+          movieReleaseYear: 1994,
           createdAt: '2024-01-01T00:00:00.000Z',
           updatedAt: '2024-01-01T00:00:00.000Z'
         }
@@ -119,6 +125,8 @@ export class RatingsController {
         comment: 'Excellent movie with outstanding performances and compelling storyline.',
         reviewerName: 'John Doe',
         movieId: 1,
+        movieTitle: 'The Shawshank Redemption',
+        movieReleaseYear: 1994,
         createdAt: '2024-01-01T00:00:00.000Z',
         updatedAt: '2024-01-01T00:00:00.000Z'
       }
@@ -147,6 +155,8 @@ export class RatingsController {
         comment: 'Updated comment - This movie is absolutely fantastic!',
         reviewerName: 'John Doe',
         movieId: 1,
+        movieTitle: 'The Shawshank Redemption',
+        movieReleaseYear: 1994,
         createdAt: '2024-01-01T00:00:00.000Z',
         updatedAt: '2024-01-01T00:00:00.000Z'
       }
